@@ -10,7 +10,7 @@ const libraryView = await readFile(new URL("../library-view.js", import.meta.url
 const content = await readFile(new URL("../content.js", import.meta.url), "utf8");
 const source = [sidebar, explore, playerSize, libraryView].map((text) => text.replaceAll("export function", "function")).join("\n") + content.replace(/^import .*;\n/gm, "");
 
-async function sidebarFixture(stored = {}) {
+async function sidebarFixture(stored = {}, { now } = {}) {
   const dom = new JSDOM(`<!doctype html><html lang="en"><head></head><body>
     <ytmusic-guide-renderer><div id="nav">
       <ytmusic-guide-entry-renderer><a href="/">Home</a></ytmusic-guide-entry-renderer>
@@ -19,6 +19,7 @@ async function sidebarFixture(stored = {}) {
     </div><ytmusic-guide-library-entry-renderer></ytmusic-guide-library-entry-renderer></ytmusic-guide-renderer>
     </body></html>`, { url: "https://music.youtube.com/", runScripts: "outside-only" });
   const { window } = dom;
+  if (now !== undefined) window.Date.now = () => now;
   const entry = window.document.querySelector("ytmusic-guide-library-entry-renderer");
   entry.attachShadow({ mode: "open" }).innerHTML = `<a id="endpoint" href="/playlist?list=PLfixture">
     <div id="text-container"><span class="title">Legacy of metal</span><span class="subtitle">berggatal</span></div></a>`;
@@ -300,11 +301,12 @@ test("sidebar updates are idempotent and icon toggles undo owned styles", async 
 });
 
 test("saved Explore appears while loading and yields to the live page", async () => {
+  const now = 1700000000000;
   const fixture = await sidebarFixture({ ymeExploreSnapshot: {
-    version: 1, locale: "en", savedAt: Date.now(), sections: [
+    version: 1, locale: "en", savedAt: now, sections: [
       { title: "New releases", items: [{ title: "Cached album", href: "/browse/MPREcached" }] },
     ],
-  } });
+  } }, { now });
   try {
     const { window } = fixture;
     const page = window.document.createElement("ytmusic-browse-response");

@@ -53,14 +53,12 @@ import { createLibraryView } from "./library-view.js";
     preview: "M3 5h18v14H3zM15 5v14M6 9l5 3-5 3Z",
     remove: "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7",
     queue: "M3 5h14M3 9h14M3 13h8M17 13v8M13 17h8",
-    next: "M4 5v14l10-7ZM18 5v14",
     addPlaylist: "M3 6h12M3 10h12M3 14h8M18 13v8M14 17h8",
     share: "M18 8a3 3 0 1 0-2.8-4M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm12 6a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM8.6 10.5l6.8-4M8.6 13.5l6.8 4",
     home: "M3 10.5 12 3l9 7.5M5.5 9v11h13V9M9 20v-6h6v6",
     explore: "M10.5 3a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15ZM16 16l5 5M8 13l2-5 5-2-2 5-5 2Z",
     search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm6-2 4 4",
     library: "M4 5h16v15H4zM8 9h8M8 12h8M8 15h5",
-    liked: "M20.8 8.7c0 5.1-8.8 11-8.8 11s-8.8-5.9-8.8-11A4.7 4.7 0 0 1 12 6a4.7 4.7 0 0 1 8.8 2.7Z",
     playlist: "M3 6h11M3 10h11M3 14h7M21 15V4l-4 1M21 15a3 3 0 1 1-6 0a3 3 0 0 1 6 0",
     podcast: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6.5 7.5a8 8 0 0 0 0 9M17.5 7.5a8 8 0 0 1 0 9M3 4a12 12 0 0 0 0 16M21 4a12 12 0 0 1 0 16",
     radio: "M4 8h16v12H4zM4 8l15-5M8 12h.01M12 12h.01M16 12h.01M8 16h8",
@@ -69,8 +67,6 @@ import { createLibraryView } from "./library-view.js";
     album: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z",
     artist: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0",
     profile: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0",
-    grid: "M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z",
-    list: "M3 5h2v2H3zm4 0h14v2H7zM3 11h2v2H3zm4 0h14v2H7zM3 17h2v2H3zm4 0h14v2H7z",
     chevronDown: "M6 9l6 6 6-6",
   };
 
@@ -91,10 +87,6 @@ import { createLibraryView } from "./library-view.js";
   const patchedVolumeControls = new WeakSet();
   const updatePlayerSize = createPlayerSizer(deepFind);
   const updateExplore = installExploreCache({ storage: extensionApi.storage.local, deepFind });
-
-  function getText(node) {
-    return (node?.innerText || node?.textContent || "").replace(/\s+/g, " ").trim();
-  }
 
   const scrollbarRoots = new WeakSet();
   function styleScrollbar(root) {
@@ -142,7 +134,7 @@ import { createLibraryView } from "./library-view.js";
     root.classList.toggle("yme-compact-sidebar", settings.compactSidebar);
     root.classList.toggle("yme-resize-sidebar", settings.sidebarResize);
     document.getElementById("yme-sidebar-resize")?.setAttribute("aria-valuenow", String(width));
-    root.style.setProperty("--yme-menu-accent", colorValue(settings.menuColor, colorValue(settings.primaryColor, "#ff4e55")));
+    root.style.setProperty("--yme-menu-accent", menuAccent());
   }
 
   function installSidebarResize() {
@@ -182,6 +174,10 @@ import { createLibraryView } from "./library-view.js";
 
   function colorValue(name, fallback) {
     return ({ red: "#ff4e55", blue: "#4b9cff", green: "#4cbd82", purple: "#b07cff", plain: "#a8aaa8", match: fallback })[name] || fallback;
+  }
+
+  function menuAccent() {
+    return colorValue(settings.menuColor, colorValue(settings.primaryColor, "#ff4e55"));
   }
 
   function updateContextMenus() {
@@ -236,7 +232,7 @@ import { createLibraryView } from "./library-view.js";
         outline-offset: -2px;
       }`;
     for (const menu of deepFind(document, "ytmusic-menu-popup-renderer")) {
-      menu.style.setProperty("--yme-menu-accent", colorValue(settings.menuColor, colorValue(settings.primaryColor, "#ff4e55")));
+      menu.style.setProperty("--yme-menu-accent", menuAccent());
       for (const root of [document, menu.shadowRoot].filter(Boolean)) {
         if (!root.querySelector("style[data-yme-menu-style]")) {
           const style = document.createElement("style");

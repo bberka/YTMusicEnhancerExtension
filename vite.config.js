@@ -19,6 +19,7 @@ export default defineConfig({
         options: "options.html",
         help: "help.html",
         navigation: "navigation.js",
+        sideplay: "sideplay.js",
         background: "background.js",
       },
       output: {

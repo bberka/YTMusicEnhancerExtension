@@ -25,6 +25,12 @@
   "content_scripts": [
     {
       "matches": ["https://music.youtube.com/*"],
+      "js": ["sideplay.js"],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://music.youtube.com/*"],
       "js": ["navigation.js"],
       "world": "MAIN",
       "run_at": "document_start"

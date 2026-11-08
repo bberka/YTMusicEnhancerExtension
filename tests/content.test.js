@@ -17,6 +17,7 @@ const libraryArtwork = await readFile(new URL("../library-artwork.js", import.me
 const quickActions = await readFile(new URL("../quick-actions.js", import.meta.url), "utf8");
 const hoverGuide = await readFile(new URL("../hover-guide.js", import.meta.url), "utf8");
 const settingsModule = await readFile(new URL("../src/settings.js", import.meta.url), "utf8");
+const sideplay = await readFile(new URL("../sideplay.js", import.meta.url), "utf8");
 const content = await readFile(new URL("../content.js", import.meta.url), "utf8");
 const source = [extensionApiModule, contentUtils, notice, volume, shuffle, playlistSearch, libraryArtwork, quickActions, hoverGuide, settingsModule, sidebar, explore, playerSize, libraryView]
   .map((text) => text.replace(/^import .*;\n/gm, "").replace(/^export (function|const|let|class) /gm, "$1 "))
@@ -967,14 +968,31 @@ test("side play resolves a track from row metadata without a watch link", async 
   const fixture = await sidebarFixture({ quickActions: ["preview"] });
   try {
     const { document } = fixture.window;
-    fixture.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+    fixture.window.HTMLDialogElement.prototype.show = function () { this.open = true; };
     fixture.window.history.pushState({}, "", "/playlist?list=PLfixture");
     const row = document.createElement("ytmusic-responsive-list-item-renderer");
     row.dataset.ymeVideoId = "abc123XYZ01";
     row.innerHTML = "<ytmusic-menu-renderer></ytmusic-menu-renderer>";
     document.body.append(row); fixture.flush();
     row.querySelector(".yme-quick-action").click();
-    assert.match(document.querySelector("#yme-sideplay iframe").src, /abc123XYZ01/);
+    const dialog = document.querySelector("#yme-sideplay");
+    assert.match(dialog.querySelector("iframe").src, /abc123XYZ01/);
+    assert.match(dialog.querySelector("iframe").src, /yme-sideplay=1/);
+    assert.equal(dialog.querySelector(".yme-sideplay-header"), null);
+    assert.equal(dialog.querySelector(".yme-sideplay-close"), null);
   } finally { fixture.dom.window.close(); }
 });
 
+
+test("side play frame styles only the player bar", () => {
+  for (const [url, expected] of [
+    ["https://music.youtube.com/watch?v=abc123XYZ01&yme-sideplay=1", true],
+    ["https://music.youtube.com/watch?v=abc123XYZ01", false],
+  ]) {
+    const dom = new JSDOM("<!doctype html><html><body></body></html>", { url, runScripts: "outside-only" });
+    try {
+      dom.window.eval(sideplay);
+      assert.equal(Boolean(dom.window.document.querySelector("style[data-yme-sideplay]")), expected, url);
+    } finally { dom.window.close(); }
+  }
+});

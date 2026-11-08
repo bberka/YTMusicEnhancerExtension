@@ -70,27 +70,21 @@ export function createQuickActions() {
 
     const dialog = document.createElement("dialog");
     dialog.id = "yme-sideplay";
-    dialog.setAttribute("aria-label", "Side play preview");
-    const header = document.createElement("div");
-    header.className = "yme-sideplay-header";
-    const title = document.createElement("strong");
-    title.textContent = "Side play";
-    const close = document.createElement("button");
-    close.type = "button";
-    close.className = "yme-sideplay-close";
-    close.textContent = "Close";
-    header.append(title, close);
+    dialog.tabIndex = -1;
+    dialog.setAttribute("aria-label", "Side play bar. Press Escape or click outside to close.");
     const frame = document.createElement("iframe");
-    frame.title = "One-off track preview";
+    frame.title = "Side play bar";
     frame.allow = "autoplay; encrypted-media; picture-in-picture";
-    frame.src = `https://music.youtube.com/watch?v=${encodeURIComponent(videoId)}&autoplay=1`;
-    dialog.append(header, frame);
+    frame.src = `https://music.youtube.com/watch?v=${encodeURIComponent(videoId)}&autoplay=1&yme-sideplay=1`;
+    dialog.append(frame);
     document.body.append(dialog);
 
     let restored = false;
+    let cleanup = () => {};
     const restoreMainPlayer = () => {
       if (restored) return;
       restored = true;
+      cleanup();
       frame.src = "about:blank";
       dialog.remove();
       for (const { media, time, wasPlaying } of pausedTracks) {
@@ -99,16 +93,20 @@ export function createQuickActions() {
         if (wasPlaying) media.play().catch(() => {});
       }
     };
-    close.addEventListener("click", restoreMainPlayer, { once: true });
-    dialog.addEventListener("cancel", (event) => {
-      event.preventDefault();
-      restoreMainPlayer();
-    }, { once: true });
-    dialog.addEventListener("click", (event) => {
-      if (event.target === dialog) restoreMainPlayer();
-    });
-    dialog.showModal();
-    close.focus();
+    const closeOnKey = (event) => {
+      if (event.key === "Escape") restoreMainPlayer();
+    };
+    const closeOnOutside = (event) => {
+      if (!dialog.contains(event.target)) restoreMainPlayer();
+    };
+    document.addEventListener("keydown", closeOnKey, true);
+    document.addEventListener("pointerdown", closeOnOutside, true);
+    cleanup = () => {
+      document.removeEventListener("keydown", closeOnKey, true);
+      document.removeEventListener("pointerdown", closeOnOutside, true);
+    };
+    dialog.show();
+    dialog.focus();
   }
 
   function clear() {

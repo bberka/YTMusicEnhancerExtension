@@ -243,10 +243,15 @@ document.addEventListener("contextmenu", (event) => {
   if (!target) return;
   event.preventDefault();
   event.stopImmediatePropagation();
-  document.dispatchEvent(new CustomEvent("yme-context-menu", {
+  const request = new CustomEvent("yme-context-menu", {
     bubbles: true,
     composed: true,
     cancelable: true,
     detail: { clientX: event.clientX, clientY: event.clientY },
-  }));
+  });
+  if (!document.dispatchEvent(request)) return;
+  // Older page builds do not expose their menu methods across worlds.
+  const menu = path.find((node) => node instanceof Element && node.matches("ytmusic-menu-renderer"))
+    || deepFind(target, "ytmusic-menu-renderer")[0];
+  findRowMenuButton(menu)?.click();
 }, true);

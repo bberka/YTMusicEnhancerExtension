@@ -148,8 +148,25 @@
       // Leave the request unhandled so the extension can report that search is unavailable.
     }
   });
-  // Page-world menu handlers are not visible from a content script, so the
-  // content script forwards right-clicks here and this world opens the menu.
+  // Right-click handlers live in the page world, so open the menu here first.
+  document.addEventListener("contextmenu", (event) => {
+    if (event.defaultPrevented || event.shiftKey) return;
+    const path = event.composedPath();
+    const card = path.find((node) => node instanceof Element && node.matches("ytmusic-responsive-list-item-renderer, ytmusic-two-row-item-renderer, ytmusic-detail-header-renderer, ytmusic-responsive-header-renderer, ytmusic-editable-playlist-detail-header-renderer, ytmusic-player-bar"));
+    if (!card) return;
+    const inPlayerBar = card.matches("ytmusic-player-bar");
+    if (!inPlayerBar && path.some((node) => node instanceof Element && node.matches("input, textarea, select, .yme-quick-action"))) return;
+    const menu = path.find((node) => node instanceof Element && node.matches("ytmusic-menu-renderer")) || card.querySelector("ytmusic-menu-renderer");
+    if (!menu || typeof menu.onMenuButtonTap !== "function") return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const synthetic = { shiftKey: false, clientX: event.clientX, clientY: event.clientY, preventDefault() {}, stopPropagation() {} };
+    setTimeout(() => {
+      if (menu.isConnected) menu.onMenuButtonTap(synthetic);
+    }, 0);
+  }, true);
+  // The content script forwards coordinates here when the listener above did
+  // not run in its world.
   function closestAcrossShadow(node, selector) {
     for (let current = node; current; current = current.parentElement || current.getRootNode()?.host) {
       if (current instanceof Element && current.matches(selector)) return current;

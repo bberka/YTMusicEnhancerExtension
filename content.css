@@ -23,8 +23,14 @@ html:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override):
   top: var(--ytmusic-nav-bar-height, 64px) !important;
   height: calc(100% - var(--ytmusic-nav-bar-height, 64px)) !important;
 }
+ytmusic-app-layout[player-visible] #mini-guide {
+  height: calc(100% - var(--ytmusic-nav-bar-height, 64px) - var(--ytmusic-player-bar-height, 72px)) !important;
+}
+:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] #mini-guide {
+  top: calc(var(--ytmusic-nav-bar-height, 64px) + var(--ytmusic-player-bar-height, 72px)) !important;
+}
 #mini-guide-spacer { display: none !important; }
-#mini-guide-renderer { background: var(--ytmusic-background, #030303); }
+#mini-guide-renderer { height: 100% !important; max-height: 100% !important; overflow: hidden !important; background: var(--ytmusic-background, #030303); }
 #mini-guide-renderer .yme-rail-playlist:hover,
 #mini-guide-renderer .yme-sidebar-shortcut:hover,
 #mini-guide-renderer ytmusic-guide-entry-renderer tp-yt-paper-item:hover {
@@ -44,6 +50,7 @@ html:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override):
   ytmusic-app.yme-hover-guide #mini-guide-renderer {
     width: min(var(--yme-sidebar-width, 240px), 100vw) !important;
     box-shadow: 6px 0 16px #0006;
+    clip-path: inset(0 -20px 0 0);
   }
   ytmusic-app.yme-hover-guide #mini-guide-renderer .title-column,
   ytmusic-app.yme-hover-guide #mini-guide-renderer #yme-sidebar-rail-shortcuts .yme-sidebar-shortcut > span,
@@ -226,7 +233,7 @@ ytmusic-menu-popup-renderer tp-yt-paper-item:hover { background-color: color-mix
   margin-top: var(--ytmusic-player-bar-height, 72px) !important;
   margin-bottom: 0 !important;
 }
-:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] :is(#guide-renderer, #mini-guide-renderer) {
+:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] #guide-renderer {
   margin-top: var(--ytmusic-player-bar-height, 72px) !important;
 }
 

@@ -22,6 +22,12 @@ try {
     await bar.click({ button: "right", position: { x: 300, y: 35 } });
     await popup.waitFor({ state: "visible", timeout: 5000 });
     assert.ok(await popup.locator('[role="menuitem"]').count() > 0, "Native song actions should appear");
+    const download = popup.locator("ytmusic-menu-service-item-download-renderer");
+    if (await download.isVisible()) {
+      const height = (await download.boundingBox()).height;
+      const other = popup.locator('ytmusic-menu-service-item-renderer[role="menuitem"]').first();
+      assert.ok(Math.abs(height - (await other.boundingBox()).height) < 1, "Download should match other menu entries");
+    }
     await page.keyboard.press("Escape");
     await popup.waitFor({ state: "hidden" });
   }

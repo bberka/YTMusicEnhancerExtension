@@ -820,6 +820,7 @@ test("playlist search icon invokes the playlist header's native find action", as
       item.addEventListener("click", () => invoked++);
       popup.append(item); document.body.append(popup);
     });
+    document.addEventListener("yme-playlist-find", (event) => { invoked++; event.preventDefault(); });
     fixture.window.history.pushState({}, "", "/playlist?list=PLtest"); fixture.flush();
     const button = shelf.querySelector('#end-items button[aria-label="Find in playlist"]');
     assert.ok(button);
@@ -827,7 +828,7 @@ test("playlist search icon invokes the playlist header's native find action", as
     assert.ok(button.querySelector("svg"));
     assert.equal(shelf.querySelector("#start-items .yme-playlist-search"), null);
     button.click(); fixture.flush();
-    assert.equal(opened, 1);
+    assert.equal(opened, 0);
     assert.equal(invoked, 1);
     assert.equal(shelf.querySelector("input"), null);
     assert.equal(shelf.querySelector("ytmusic-responsive-list-item-renderer").style.display, "");

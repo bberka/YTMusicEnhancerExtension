@@ -62,6 +62,30 @@ test("shuffle play uses the collection's native endpoint without opening a menu"
   } finally { dom.window.close(); }
 });
 
+test("playlist find sends the shelf's native filter search action without a menu", () => {
+  const dom = new JSDOM('<!doctype html><html><body><ytmusic-playlist-shelf-renderer></ytmusic-playlist-shelf-renderer></body></html>', { url: "https://music.youtube.com/playlist?list=PLfixture", runScripts: "outside-only" });
+  try {
+    const { window } = dom;
+    window.requestAnimationFrame = () => 1;
+    const shelf = window.document.querySelector("ytmusic-playlist-shelf-renderer");
+    shelf.data = { playlistId: "PLfixture" };
+    let action;
+    window.document.addEventListener("yt-action", (event) => {
+      action = event.detail;
+      shelf.showFilterSearch = true;
+    });
+    window.eval(source);
+    const open = () => window.document.dispatchEvent(new window.CustomEvent("yme-playlist-find", { bubbles: true, composed: true, cancelable: true }));
+    assert.equal(open(), false);
+    assert.equal(action.actionName, "yt-start-playlist-search");
+    assert.equal(action.args[0].playlistFilterSearchEndpoint.playlistId, "PLfixture");
+    shelf.showFilterSearch = false;
+    shelf.data = {};
+    window.history.replaceState({}, "", "/playlist");
+    assert.equal(open(), true, "an unavailable search must remain unhandled");
+  } finally { dom.window.close(); }
+});
+
 test("sidebar playlist play creates a shuffle endpoint without opening a menu", () => {
   const dom = new JSDOM('<!doctype html><html><body><ytmusic-app></ytmusic-app><ytmusic-guide-entry-renderer><ytmusic-play-button-renderer></ytmusic-play-button-renderer></ytmusic-guide-entry-renderer></body></html>', { url: "https://music.youtube.com/", runScripts: "outside-only" });
   try {

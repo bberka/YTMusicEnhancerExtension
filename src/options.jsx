@@ -165,10 +165,12 @@ function App() {
                 {actionOrder.map((id) => {
                   const index = settings.quickActions.indexOf(id);
                   const Icon = actionIcons[id];
-                  return <div key={id} className="flex min-h-10 items-center gap-3 rounded-md px-2 py-1">
+                  return <div key={id} className="flex min-h-10 items-center rounded-md hover:bg-muted">
+                    <label htmlFor={`action-${id}`} className="flex min-h-10 min-w-0 flex-1 cursor-pointer items-center gap-3 px-2 py-1">
                     <Checkbox id={`action-${id}`} aria-label={`Show ${actionNames[id]}`} checked={index >= 0} onCheckedChange={(enabled) => update({ quickActions: enabled ? [...settings.quickActions, id] : settings.quickActions.filter((value) => value !== id) })} />
                     <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    <label htmlFor={`action-${id}`} className="min-w-0 flex-1 text-sm">{actionNames[id]}</label>
+                    <span className="min-w-0 flex-1 text-sm">{actionNames[id]}</span>
+                    </label>
                     {index >= 0 && <OrderButtons label={actionNames[id]} index={index} length={settings.quickActions.length} move={(offset) => update({ quickActions: reordered(settings.quickActions, index, offset) })} />}
                   </div>;
                 })}
@@ -196,10 +198,12 @@ function App() {
               <div id="shortcut-list" className="space-y-1">
                 {settings.sidebarShortcuts.map((item, index) => {
                   const Icon = icons[item.icon] || ListMusic;
-                  return <div key={item.id} data-shortcut-row={item.id} className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-1.5 sm:gap-3">
+                  return <div key={item.id} data-shortcut-row={item.id} className="flex min-w-0 items-center rounded-lg hover:bg-muted">
+                    <label htmlFor={`shortcut-${item.id}`} className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 px-1 py-1.5 sm:gap-3">
                     <Checkbox id={`shortcut-${item.id}`} aria-label={`Show ${item.label} in the sidebar`} checked={item.enabled} onCheckedChange={(enabled) => update({ sidebarShortcuts: settings.sidebarShortcuts.map((value) => value.id === item.id ? { ...value, enabled } : value) })} />
                     <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    <div className="min-w-0 flex-1"><label htmlFor={`shortcut-${item.id}`} className="block truncate text-sm font-medium" title={item.label}>{item.label}</label><span className="block truncate text-xs text-muted-foreground">{item.path}</span></div>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium" title={item.label}>{item.label}</span><span className="block truncate text-xs text-muted-foreground">{item.path}</span></span>
+                    </label>
                     <OrderButtons label={item.label} index={index} length={settings.sidebarShortcuts.length} move={(offset) => update({ sidebarShortcuts: reordered(settings.sidebarShortcuts, index, offset) })} />
                     {item.custom ? <Button size="icon" variant="ghost" className="size-8" aria-label={`Remove ${item.label} shortcut`} onClick={() => update({ sidebarShortcuts: settings.sidebarShortcuts.filter((value) => value.id !== item.id) })}><Trash2 className="size-4" /></Button> : <span className="hidden size-8 shrink-0 sm:block" />}
                   </div>;
@@ -243,7 +247,7 @@ function App() {
       </div>
       </div>
       <div className="grid items-start gap-7 md:grid-cols-[160px_minmax(0,1fr)] lg:gap-10">
-        <nav aria-label="Settings sections" className="sticky top-0 z-10 flex gap-1 overflow-x-auto bg-background py-2 md:top-6 md:flex-col md:py-0">
+        <nav aria-label="Settings sections" className="sticky top-0 z-10 flex gap-1 overflow-x-auto bg-background py-2 md:top-6 md:-mt-16 md:flex-col md:py-0">
           {visiblePanels.map(({ props: { id, title } }) => {
             const Icon = sectionIcons[id];
             return <a key={id} href={`#${id}-title`} className="flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><Icon aria-hidden="true" className="size-4 shrink-0" />{title}</a>;

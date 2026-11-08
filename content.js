@@ -214,6 +214,13 @@ import { createLibraryView } from "./library-view.js";
         min-height: 36px !important;
         padding-block: 0 !important;
       }
+      ytmusic-menu-popup-renderer ytmusic-menu-service-item-download-renderer tp-yt-paper-item,
+      :host(ytmusic-menu-popup-renderer) ytmusic-menu-service-item-download-renderer tp-yt-paper-item {
+        box-sizing: border-box !important;
+        height: auto !important;
+        min-height: 36px !important;
+        padding-block: 0 !important;
+      }
       ytmusic-menu-popup-renderer .text, :host(ytmusic-menu-popup-renderer) .text {
         min-width: 0 !important;
         white-space: normal !important;
@@ -699,33 +706,10 @@ import { createLibraryView } from "./library-view.js";
   }, true);
 
   let playlistSearch = null;
-  let playlistSearchPending = false;
 
-  function openNativePlaylistSearch(key) {
-    if (playlistSearchPending) return;
-    const headers = deepFind(document, "ytmusic-detail-header-renderer, ytmusic-responsive-header-renderer, ytmusic-editable-playlist-detail-header-renderer, ytmusic-playlist-header-renderer");
-    const menu = headers.flatMap((header) => deepFind(header, "ytmusic-menu-renderer"))
-      .find((element) => element.getClientRects().length);
-    const trigger = menu && findRowMenuButton(menu);
-    if (!trigger) {
-      showNotice("Couldn’t find the playlist menu. Open its three-dot menu to search.");
-      return;
-    }
-    playlistSearchPending = true;
-    trigger.click();
-    const started = Date.now();
-    const findAction = () => {
-      if (playlistKey() !== key) { playlistSearchPending = false; return; }
-      const popups = deepFind(document, "ytmusic-menu-popup-renderer, tp-yt-paper-listbox[role='menu']")
-        .filter((popup) => popup.getClientRects().length);
-      const items = popups.flatMap((popup) => deepFind(popup, "ytmusic-menu-service-item-renderer, ytmusic-menu-navigation-item-renderer, tp-yt-paper-item, [role='menuitem']"));
-      const action = items.find((item) => item.getClientRects().length && /(?:find|search) (?:in|within) (?:this )?playlist/i.test(getText(item)));
-      if (action) { playlistSearchPending = false; action.click(); return; }
-      if (Date.now() - started < 1200) { setTimeout(findAction, 50); return; }
-      playlistSearchPending = false;
-      showNotice("Find in playlist isn’t available in this playlist’s menu.");
-    };
-    requestAnimationFrame(findAction);
+  function openNativePlaylistSearch() {
+    const request = new CustomEvent("yme-playlist-find", { bubbles: true, composed: true, cancelable: true });
+    if (document.dispatchEvent(request)) showNotice("Find in playlist isn’t available on this page.");
   }
 
   function styleNativePlaylistSearch() {
@@ -769,7 +753,7 @@ import { createLibraryView } from "./library-view.js";
     const icon = makeIcon("search");
     icon.style.cssText = "width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round";
     button.append(icon);
-    button.addEventListener("click", () => openNativePlaylistSearch(key));
+    button.addEventListener("click", openNativePlaylistSearch);
     end.append(button);
     playlistSearch = { key, shelf, button };
   }

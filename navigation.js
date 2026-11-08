@@ -119,6 +119,35 @@
       // Leave the request unhandled so the extension can report that the action is unavailable.
     }
   });
+  // The playlist shelf can open its native filter search without going through the menu.
+  // Dispatching the same action the menu sends opens the search and loads its track metadata.
+  document.addEventListener("yme-playlist-find", (event) => {
+    const shelves = [...document.querySelectorAll("ytmusic-playlist-shelf-renderer")];
+    const shelf = shelves.find((element) => element.getClientRects().length) || shelves[0];
+    const playlistId = shelf?.data?.playlistId || new URLSearchParams(location.search).get("list");
+    if (!shelf || !playlistId) return;
+    try {
+      shelf.dispatchEvent(new CustomEvent("yt-action", {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+        detail: {
+          actionName: "yt-start-playlist-search",
+          optionalAction: false,
+          args: [{ playlistFilterSearchEndpoint: { playlistId } }],
+          returnValue: [],
+        },
+      }));
+      if (!shelf.showFilterSearch) return;
+      event.preventDefault();
+      requestAnimationFrame(() => {
+        const input = document.querySelector('input[placeholder="Find on this page" i], input[aria-label="Find on this page" i]');
+        if (input?.getClientRects().length) input.focus();
+      });
+    } catch {
+      // Leave the request unhandled so the extension can report that search is unavailable.
+    }
+  });
   // The menu renderer exposes its shuffle endpoint even while its popup is closed.
   document.addEventListener("yme-shuffle-play", (event) => {
     const play = event.target;

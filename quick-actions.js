@@ -169,17 +169,19 @@ export function createQuickActions() {
   return { enhance };
 }
 
-// Open the native song menu from the player bar or anywhere on a song row.
+// Ask the page world to open the native menu, because its handlers live there.
 document.addEventListener("contextmenu", (event) => {
   if (event.defaultPrevented || event.shiftKey) return;
   const path = event.composedPath();
   if (path.some((node) => node instanceof Element && node.matches("input, textarea, select, .yme-quick-action"))) return;
-  const bar = path.find((node) => node instanceof Element && node.matches("ytmusic-player-bar"));
-  const row = path.find((node) => node instanceof Element && node.matches("ytmusic-responsive-list-item-renderer"));
-  const menu = bar && deepFind(bar, "ytmusic-menu-renderer")[0];
-  const trigger = menu ? findRowMenuButton(menu) : row ? findRowMenuButton(row) : null;
-  if (!trigger) return;
+  const target = path.find((node) => node instanceof Element && node.matches("ytmusic-responsive-list-item-renderer, ytmusic-two-row-item-renderer, ytmusic-detail-header-renderer, ytmusic-responsive-header-renderer, ytmusic-editable-playlist-detail-header-renderer, ytmusic-player-bar, ytmusic-menu-renderer"));
+  if (!target) return;
   event.preventDefault();
   event.stopImmediatePropagation();
-  trigger.click();
+  document.dispatchEvent(new CustomEvent("yme-context-menu", {
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+    detail: { clientX: event.clientX, clientY: event.clientY },
+  }));
 }, true);

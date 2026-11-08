@@ -86,6 +86,46 @@ test("playlist find sends the shelf's native filter search action without a menu
   } finally { dom.window.close(); }
 });
 
+test("page-world context menu uses native card handlers for grid and list views", async () => {
+  const dom = new JSDOM('<!doctype html><html><body><ytmusic-two-row-item-renderer><a class="title">Card</a></ytmusic-two-row-item-renderer><ytmusic-responsive-list-item-renderer><a class="title">Row</a></ytmusic-responsive-list-item-renderer></body></html>', { url: "https://music.youtube.com/library/playlists", runScripts: "outside-only" });
+  try {
+    const { window } = dom;
+    window.requestAnimationFrame = () => 1;
+    window.eval(source);
+    for (const tag of ["ytmusic-two-row-item-renderer", "ytmusic-responsive-list-item-renderer"]) {
+      const card = window.document.querySelector(tag);
+      card.data = { menu: { menuRenderer: {} } };
+      let received;
+      card.onContextMenu = (event) => { received = event; };
+      window.document.elementFromPoint = () => card.querySelector("a");
+      const request = new window.CustomEvent("yme-context-menu", { bubbles: true, composed: true, cancelable: true, detail: { target: card.querySelector("a"), clientX: 123, clientY: 456 } });
+      window.document.dispatchEvent(request);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      assert.equal(request.defaultPrevented, true, tag);
+      assert.equal(received.clientX, 123, tag);
+      assert.equal(received.clientY, 456, tag);
+    }
+  } finally { dom.window.close(); }
+});
+
+test("page-world context menu falls back to the player bar menu", async () => {
+  const dom = new JSDOM('<!doctype html><html><body><ytmusic-player-bar><div class="player-area"></div><ytmusic-menu-renderer></ytmusic-menu-renderer></ytmusic-player-bar></body></html>', { url: "https://music.youtube.com/", runScripts: "outside-only" });
+  try {
+    const { window } = dom;
+    window.requestAnimationFrame = () => 1;
+    window.eval(source);
+    let received;
+    window.document.querySelector("ytmusic-menu-renderer").onMenuButtonTap = (event) => { received = event; };
+    window.document.elementFromPoint = () => window.document.querySelector(".player-area");
+    const request = new window.CustomEvent("yme-context-menu", { bubbles: true, composed: true, cancelable: true, detail: { target: window.document.querySelector(".player-area"), clientX: 20, clientY: 30 } });
+    window.document.dispatchEvent(request);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(request.defaultPrevented, true);
+    assert.equal(received.clientX, 20);
+    assert.equal(received.clientY, 30);
+  } finally { dom.window.close(); }
+});
+
 test("sidebar playlist play creates a shuffle endpoint without opening a menu", () => {
   const dom = new JSDOM('<!doctype html><html><body><ytmusic-app></ytmusic-app><ytmusic-guide-entry-renderer><ytmusic-play-button-renderer></ytmusic-play-button-renderer></ytmusic-guide-entry-renderer></body></html>', { url: "https://music.youtube.com/", runScripts: "outside-only" });
   try {

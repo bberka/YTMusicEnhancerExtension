@@ -942,7 +942,7 @@ test("hiding New playlist removes inset from playlist wrappers outside a guide s
   } finally { fixture.dom.window.close(); }
 });
 
-test("right-click anywhere on a playlist song opens its native menu immediately again after dismissal", async () => {
+test("right-click anywhere on a playlist song asks the page world for its native menu", async () => {
   const fixture = await sidebarFixture({ quickActionsEnabled: false });
   try {
     const { document, MouseEvent } = fixture.window;
@@ -950,14 +950,16 @@ test("right-click anywhere on a playlist song opens its native menu immediately 
     const row = document.createElement("ytmusic-responsive-list-item-renderer");
     row.innerHTML = '<div class="thumbnail">Artwork</div><a class="title">Song</a><div class="empty-space"></div><ytmusic-menu-renderer><button aria-label="More options"></button></ytmusic-menu-renderer>';
     document.body.append(row); fixture.flush();
-    let opens = 0;
-    row.querySelector('ytmusic-menu-renderer button').addEventListener("click", () => opens++);
+    const requests = [];
+    document.addEventListener("yme-context-menu", (event) => { requests.push(event.detail); event.preventDefault(); });
     for (const target of [row, row.querySelector('.thumbnail'), row.querySelector('.empty-space'), row.querySelector('.title')]) {
-      const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2 });
+      const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2, clientX: 25, clientY: 40 });
       target.dispatchEvent(event);
       assert.equal(event.defaultPrevented, true);
     }
-    assert.equal(opens, 4);
+    assert.equal(requests.length, 4);
+    assert.equal(requests[0].clientX, 25);
+    assert.equal(requests[0].clientY, 40);
   } finally { fixture.dom.window.close(); }
 });
 

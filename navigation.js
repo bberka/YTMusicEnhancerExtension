@@ -148,6 +148,36 @@
       // Leave the request unhandled so the extension can report that search is unavailable.
     }
   });
+  // Page-world menu handlers are not visible from a content script, so the
+  // content script forwards right-clicks here and this world opens the menu.
+  function closestAcrossShadow(node, selector) {
+    for (let current = node; current; current = current.parentElement || current.getRootNode()?.host) {
+      if (current instanceof Element && current.matches(selector)) return current;
+    }
+    return null;
+  }
+  document.addEventListener("yme-context-menu", (event) => {
+    const { target: forwarded, clientX, clientY } = event.detail || {};
+    const hit = document.elementFromPoint(clientX, clientY);
+    const target = hit instanceof Element ? hit : forwarded instanceof Element ? forwarded : null;
+    if (!target) return;
+    const synthetic = { shiftKey: false, clientX, clientY, preventDefault() {}, stopPropagation() {} };
+    const card = closestAcrossShadow(target, "ytmusic-responsive-list-item-renderer, ytmusic-two-row-item-renderer, ytmusic-detail-header-renderer, ytmusic-responsive-header-renderer, ytmusic-editable-playlist-detail-header-renderer, ytmusic-player-bar");
+    const menu = closestAcrossShadow(target, "ytmusic-menu-renderer") || card?.querySelector("ytmusic-menu-renderer");
+    if (menu && typeof menu.onMenuButtonTap === "function") {
+      event.preventDefault();
+      setTimeout(() => {
+        if (menu.isConnected) menu.onMenuButtonTap(synthetic);
+      }, 0);
+      return;
+    }
+    if (card && typeof card.onContextMenu === "function" && card.data?.menu) {
+      event.preventDefault();
+      setTimeout(() => {
+        if (card.isConnected) card.onContextMenu(synthetic);
+      }, 0);
+    }
+  });
   // The menu renderer exposes its shuffle endpoint even while its popup is closed.
   document.addEventListener("yme-shuffle-play", (event) => {
     const play = event.target;

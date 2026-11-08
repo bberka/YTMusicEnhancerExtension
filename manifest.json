@@ -21,11 +21,17 @@
     "service_worker": "background.js"
   },
   "permissions": ["storage"],
-  "host_permissions": ["https://music.youtube.com/*", "https://www.youtube.com/*"],
+  "host_permissions": ["https://music.youtube.com/*"],
   "content_scripts": [
     {
       "matches": ["https://music.youtube.com/*"],
-      "js": ["content.js", "comments.js"],
+      "js": ["navigation.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://music.youtube.com/*"],
+      "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

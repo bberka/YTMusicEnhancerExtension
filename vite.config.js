@@ -3,12 +3,14 @@ import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 
 const manifest = readFileSync(new URL("./manifest.json", import.meta.url), "utf8");
 const contentCss = readFileSync(new URL("./content.css", import.meta.url), "utf8");
 const iconSizes = [16, 32, 48, 128];
 
 export default defineConfig({
+  resolve: { alias: { "@": path.resolve("src") } },
   build: {
     outDir: "dist",
     emptyOutDir: true,
@@ -17,7 +19,7 @@ export default defineConfig({
         options: "options.html",
         help: "help.html",
         content: "content.js",
-        comments: "comments.js",
+        navigation: "navigation.js",
         background: "background.js",
       },
       output: {
@@ -26,7 +28,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [tailwindcss(), {
+  plugins: [react(), tailwindcss(), {
     name: "emit-extension-files",
     generateBundle() {
       this.emitFile({ type: "asset", fileName: "manifest.json", source: manifest });

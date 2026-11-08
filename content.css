@@ -1,3 +1,81 @@
+/* Expanded sidebar width; leave the collapsed rail and hidden-guide pages alone. */
+ytmusic-guide-renderer:not([is-collapsed]) { width: var(--yme-sidebar-width, 240px) !important; }
+@media (min-width: 936px) {
+  ytmusic-app:not([guide-collapsed]):not([is-hidden-guide-page]) { --ytmusic-guide-width: var(--yme-sidebar-width, 240px) !important; }
+}
+@media (max-width: 935px) {
+  ytmusic-app #guide { --app-drawer-width: min(var(--yme-sidebar-width, 240px), 100vw); }
+  ytmusic-app #guide-wrapper { width: var(--yme-sidebar-width, 240px) !important; }
+}
+/* Override YouTube Music's own scrollbar styling, including the arrow buttons. */
+html, html *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override) { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+html:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar, html *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar { display: block !important; width: 3px !important; height: 3px !important; }
+html:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-thumb, html *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-thumb { background: #777 !important; border-radius: 4px !important; }
+html:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-track, html *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-track { background: transparent !important; }
+html:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-button, html *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-button { display: none !important; width: 0 !important; height: 0 !important; }
+@supports (-moz-appearance: none) { html, html *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override) { scrollbar-width: thin !important; scrollbar-color: #777 transparent !important; } }
+
+/* The rail itself widens over the page and retains the same scroll position. */
+#mini-guide {
+  top: var(--ytmusic-nav-bar-height, 64px) !important;
+  height: calc(100% - var(--ytmusic-nav-bar-height, 64px)) !important;
+}
+#mini-guide-spacer { display: none !important; }
+#mini-guide-renderer { background: var(--ytmusic-background, #030303); }
+#mini-guide-renderer .yme-rail-playlist:hover,
+#mini-guide-renderer .yme-sidebar-shortcut:hover,
+#mini-guide-renderer ytmusic-guide-entry-renderer tp-yt-paper-item:hover {
+  background: var(--yt-spec-10-percent-layer, #ffffff1a) !important;
+}
+#mini-guide-renderer .title-column,
+#mini-guide-renderer #yme-sidebar-rail-shortcuts .yme-sidebar-shortcut > span,
+#mini-guide-renderer .yme-rail-label { display: none !important; }
+#mini-guide-renderer #yme-sidebar-rail-shortcuts .yme-sidebar-shortcut,
+#mini-guide-renderer ytmusic-guide-entry-renderer[is-primary] tp-yt-paper-item { min-height: 52px !important; height: 52px !important; box-sizing: border-box !important; gap: 0 !important; }
+#mini-guide-renderer ytmusic-guide-entry-renderer[is-primary] tp-yt-paper-item { justify-content: center !important; }
+@media (hover: hover) {
+  ytmusic-app.yme-hover-guide #mini-guide {
+    width: min(var(--yme-sidebar-width, 240px), 100vw) !important;
+    z-index: 6 !important;
+  }
+  ytmusic-app.yme-hover-guide #mini-guide-renderer {
+    width: min(var(--yme-sidebar-width, 240px), 100vw) !important;
+    box-shadow: 6px 0 16px #0006;
+  }
+  ytmusic-app.yme-hover-guide #mini-guide-renderer .title-column,
+  ytmusic-app.yme-hover-guide #mini-guide-renderer #yme-sidebar-rail-shortcuts .yme-sidebar-shortcut > span,
+  ytmusic-app.yme-hover-guide #mini-guide-renderer .yme-rail-label { display: block !important; }
+  ytmusic-app.yme-hover-guide #mini-guide-renderer ytmusic-guide-entry-renderer tp-yt-paper-item,
+  ytmusic-app.yme-hover-guide #mini-guide-renderer #yme-sidebar-rail-shortcuts .yme-sidebar-shortcut {
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    gap: 16px !important;
+    min-height: 52px !important;
+    height: 52px !important;
+    padding: 0 16px !important;
+    font-size: 14px !important;
+    text-align: left !important;
+  }
+  ytmusic-app.yme-hover-guide #mini-guide-renderer .yme-rail-playlist { flex-direction: row !important; justify-content: flex-start !important; gap: 16px !important; padding: 0 16px !important; font-size: 14px !important; text-align: left !important; }
+  ytmusic-app.yme-hover-guide #mini-guide-renderer ytmusic-guide-entry-renderer .title { font-size: 14px !important; line-height: 20px !important; text-align: left !important; }
+  ytmusic-app.yme-hover-guide #mini-guide-renderer .yme-rail-label { flex: 1; width: auto !important; }
+}
+@media (max-width: 615px) {
+  ytmusic-app:not([is-hidden-guide-page]) { --ytmusic-guide-width: 72px !important; }
+  ytmusic-app:not([is-hidden-guide-page]) #mini-guide { display: block !important; }
+  ytmusic-app-layout[player-fullscreened] #mini-guide { display: none !important; }
+}
+
+/* The native create control sits between navigation and the playlist list. */
+ytmusic-guide-renderer #new-playlist-button { margin: 4px 12px !important; min-height: 32px !important; }
+ytmusic-guide-renderer #new-playlist-button button { min-height: 32px !important; height: 32px !important; }
+
+ytmusic-responsive-list-item-renderer.yme-has-like ytmusic-like-button-renderer { opacity: 0 !important; pointer-events: none !important; }
+ytmusic-responsive-list-item-renderer.yme-has-actions:hover ytmusic-menu-renderer,
+ytmusic-responsive-list-item-renderer.yme-has-actions:focus-within ytmusic-menu-renderer { opacity: 1 !important; visibility: visible !important; }
+
 /* Enhancements are scoped to injected elements and enabled page-level modifiers. */
 ytmusic-responsive-list-item-renderer { position: relative !important; }
 
@@ -7,28 +85,43 @@ ytmusic-responsive-list-item-renderer { position: relative !important; }
   inset-inline-end: 48px;
   top: 50%;
   display: flex;
-  gap: 5px;
+  gap: 2px;
   transform: translateY(-50%);
   opacity: 0;
+  pointer-events: none;
   transition: opacity 100ms ease;
 }
 
 ytmusic-responsive-list-item-renderer:hover .yme-quick-actions,
-ytmusic-responsive-list-item-renderer:focus-within .yme-quick-actions { opacity: 1; }
+ytmusic-responsive-list-item-renderer:focus-within .yme-quick-actions { opacity: 1; pointer-events: auto; }
 
 .yme-quick-action {
-  min-height: 28px;
-  padding: 0 9px;
-  border: 1px solid color-mix(in srgb, var(--yme-action, #ff4e55) 45%, transparent);
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--yme-action, #ff4e55) 17%, #171717);
-  color: #fff;
-  font: 500 11px/1.1 system-ui, sans-serif;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  padding: 8px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--yt-spec-text-primary, #fff);
   cursor: pointer;
   white-space: nowrap;
 }
 
-.yme-quick-action:hover { background: color-mix(in srgb, var(--yme-action, #ff4e55) 38%, #171717); }
+.yme-quick-action svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.yme-quick-action:hover { background: var(--yt-spec-10-percent-layer, #ffffff1a); color: var(--yme-action, inherit); }
 .yme-quick-action:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 :root[data-yme-action-color="red"] { --yme-action: #ff4e55; }
@@ -57,51 +150,6 @@ ytmusic-responsive-list-item-renderer:focus-within .yme-quick-actions { opacity:
 :root[data-yme-menu-color="match"] ytmusic-menu-popup-renderer tp-yt-paper-listbox { --yme-menu-tint: var(--yt-spec-call-to-action, #ff4e55); }
 ytmusic-menu-popup-renderer [role="menuitem"]:hover,
 ytmusic-menu-popup-renderer tp-yt-paper-item:hover { background-color: color-mix(in srgb, var(--yme-menu-tint, #ff4e55) 17%, transparent) !important; }
-
-.yme-sidebar-icon {
-  display: inline-flex;
-  width: 22px;
-  height: 22px;
-  margin-inline-end: 10px;
-  align-items: center;
-  justify-content: center;
-  color: var(--yme-primary, var(--yt-spec-text-secondary, #aaa));
-  flex: 0 0 auto;
-}
-
-.yme-sidebar-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-:root:not(.yme-sidebar-icons) .yme-sidebar-icon { display: none; }
-
-:root.yme-sidebar-icons ytmusic-guide-library-entry-renderer[data-yme-icon-kind] { position: relative !important; }
-:root.yme-sidebar-icons ytmusic-guide-library-entry-renderer[data-yme-icon-kind]::before {
-  position: absolute;
-  z-index: 2;
-  top: 50%;
-  left: 4px;
-  width: 16px;
-  height: 16px;
-  transform: translateY(-50%);
-  background-color: var(--yt-spec-text-secondary, #aaa);
-  content: "";
-  pointer-events: none;
-  mask: var(--yme-library-icon) center / contain no-repeat;
-}
-:root.yme-sidebar-icons ytmusic-guide-library-entry-renderer[data-yme-icon-kind="playlist"] { --yme-library-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6h18v2H3zm0 5h13v2H3zm0 5h9v2H3zm13-1v8l6-4z'/%3E%3C/svg%3E"); }
-:root.yme-sidebar-icons ytmusic-guide-library-entry-renderer[data-yme-icon-kind="download"] { --yme-library-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 20h14v-2H5zM11 3h2v9l3.5-3.5 1.4 1.4L12 16.8l-5.9-5.9 1.4-1.4L11 12z'/%3E%3C/svg%3E"); }
-:root.yme-sidebar-icons ytmusic-guide-library-entry-renderer[data-yme-icon-kind="liked"] { --yme-library-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-8-4.9-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 6.1-8 11-8 11z'/%3E%3C/svg%3E"); }
-:root.yme-sidebar-icons ytmusic-guide-library-entry-renderer[data-yme-icon-kind="radio"] { --yme-library-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z'/%3E%3C/svg%3E"); }
-:root.yme-sidebar-icons ytmusic-guide-library-entry-renderer[data-yme-has-art="true"]::before { border-radius: 4px; background-color: transparent; background-image: var(--yme-playlist-art); background-position: center; background-size: cover; mask: none; }
-
-#yme-sidebar-shortcuts { display: grid; gap: 2px; margin: 8px 0; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--yt-spec-text-primary, #fff) 12%, transparent); }
-.yme-sidebar-shortcut { min-height: 40px; display: flex; align-items: center; padding: 0 16px; border-radius: 6px; color: var(--yt-spec-text-primary, #fff); font: 500 14px/1.2 system-ui, sans-serif; text-decoration: none; }
-.yme-sidebar-shortcut:hover, .yme-sidebar-shortcut:focus-visible { background: color-mix(in srgb, var(--yt-spec-text-primary, #fff) 10%, transparent); outline: none; }
-
-:root.yme-large-progress #progress-bar,
-:root.yme-large-progress tp-yt-paper-slider#progress-bar,
-:root.yme-large-progress .ytmusic-player-bar #progress-bar { --paper-slider-height: 8px !important; }
-
-:root.yme-large-progress #progress-bar #sliderContainer,
-:root.yme-large-progress #progress-bar .slider-container { height: 8px !important; }
 
 #yme-notice {
   position: fixed;
@@ -138,55 +186,13 @@ ytmusic-menu-popup-renderer tp-yt-paper-item:hover { background-color: color-mix
 .yme-sideplay-close { padding: 6px 10px; border: 1px solid #444; border-radius: 5px; background: #252828; color: inherit; font: 12px system-ui, sans-serif; cursor: pointer; }
 #yme-sideplay iframe { display: block; width: 100%; height: min(405px, 58vh); border: 0; background: #000; }
 
-:root[data-yme-library-view="list"] ytmusic-two-row-item-renderer { width: 100% !important; min-height: 72px !important; }
-
-#yme-comments-drawer {
-  position: fixed;
-  z-index: 999998;
-  right: 16px;
-  bottom: 16px;
-  width: min(520px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid #3b3e3e;
-  border-radius: 14px;
-  background: #171919;
-  color: #f5f5f3;
-  box-shadow: 0 18px 70px #000a;
-  transform: translateY(calc(100% + 24px));
-  transition: transform 180ms ease;
-}
-#yme-comments-drawer.is-open { transform: translateY(0); }
-.yme-comments-resize { height: 8px; flex: 0 0 8px; cursor: ns-resize; background: linear-gradient(90deg, transparent calc(50% - 20px), #666 calc(50% - 20px), #666 calc(50% + 20px), transparent calc(50% + 20px)) center / 100% 2px no-repeat; }
-.yme-comments-header { min-height: 54px; display: flex; align-items: center; gap: 16px; padding: 0 16px; border-bottom: 1px solid #303333; font: 13px system-ui, sans-serif; }
-.yme-comments-header > div:first-child { display: flex; align-items: baseline; gap: 5px; margin-right: auto; }
-.yme-comments-count { color: #a0a3a1; font-size: 11px; }
-.yme-comments-sort { display: flex; gap: 4px; }
-.yme-comments-sort button, .yme-comments-close { border: 0; border-radius: 6px; background: transparent; color: #a0a3a1; font: 12px system-ui, sans-serif; cursor: pointer; }
-.yme-comments-sort button { padding: 7px 9px; }
-.yme-comments-sort button:hover, .yme-comments-sort button[aria-pressed="true"] { background: #2c2f2f; color: #fff; }
-.yme-comments-close { width: 30px; height: 30px; font-size: 22px; }
-.yme-comments-close:hover { background: #2c2f2f; color: #fff; }
-.yme-comments-list { min-height: 100px; overflow: auto; padding: 7px 16px 16px; overscroll-behavior: contain; }
-.yme-comment { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 13px 0; border-bottom: 1px solid #292c2c; font: 13px/1.55 system-ui, sans-serif; }
-.yme-comment-avatar, .yme-comment-avatar-placeholder { width: 32px; height: 32px; border-radius: 50%; background: #343838; object-fit: cover; }
-.yme-comment-content { min-width: 0; }
-.yme-comment-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: #9da2a0; font-size: 11px; }
-.yme-comment-meta strong { color: #f3f4f2; font-size: 12px; font-weight: 600; }
-.yme-comment-badge, .yme-comment-pinned { padding: 2px 6px; border-radius: 4px; background: #292d2d; color: #c7cac8; font-size: 9px; }
-.yme-comment-pinned { display: inline-block; margin-bottom: 5px; color: #ff777b; }
-.yme-comment-text { margin: 6px 0 0; color: #e4e5e3; white-space: pre-wrap; overflow-wrap: anywhere; }
-.yme-comment-read-more, .yme-comment-replies { margin: 7px 8px 0 0; padding: 0; border: 0; background: none; color: #9fc8ff; font: 11px system-ui, sans-serif; cursor: pointer; }
-.yme-comment-reply-list { margin-top: 8px; padding-left: 10px; border-left: 1px solid #444; }
-.yme-comment-reply { padding-block: 8px; }
-.yme-comments-message, .yme-comments-error { padding: 26px 8px; color: #a0a3a1; font: 13px/1.6 system-ui, sans-serif; text-align: center; }
-.yme-comments-error { color: #ff9a9e; }
-
-@media (max-width: 560px) {
-  #yme-comments-drawer { right: 0; bottom: 0; width: 100vw; border-radius: 12px 12px 0 0; }
-}
+#yme-explore-preview { padding: 24px; color: var(--yt-spec-text-primary, #fff); font: 14px Roboto, Arial, sans-serif; }
+#yme-explore-preview .yme-explore-note { margin: 0 0 24px; color: var(--yt-spec-text-secondary, #aaa); font-size: 12px; }
+#yme-explore-preview h2 { margin: 24px 0 16px; font-size: 24px; font-weight: 700; }
+#yme-explore-preview .yme-explore-row { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 12px; }
+#yme-explore-preview a { display: grid; align-content: start; gap: 10px; flex: 0 0 160px; color: inherit; text-decoration: none; line-height: 1.5; }
+#yme-explore-preview a:focus-visible { outline: 2px solid var(--yt-spec-call-to-action, #3ea6ff); outline-offset: 3px; }
+#yme-explore-preview img { width: 160px; height: 160px; border-radius: 4px; object-fit: cover; }
 
 @media (hover: none) {
   .yme-quick-actions { opacity: 1; }
@@ -194,5 +200,77 @@ ytmusic-menu-popup-renderer tp-yt-paper-item:hover { background-color: color-mix
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .yme-quick-actions, #yme-notice, #yme-comments-drawer { transition: none; }
+  .yme-quick-actions, #yme-notice { transition: none; }
 }
+
+/* Move the playing controls below the navigation bar and reserve their space. */
+:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] ytmusic-player-bar,
+:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] #player-bar-background {
+  top: var(--ytmusic-nav-bar-height, 64px) !important;
+  bottom: auto !important;
+}
+/* Keep the seek track clear of the navigation bar when controls are at the top. */
+:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] ytmusic-player-bar #progress-bar {
+  top: auto !important;
+  bottom: -29px !important;
+  z-index: 1;
+}
+:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] ytmusic-player-page {
+  top: calc(var(--ytmusic-nav-bar-height, 64px) + var(--ytmusic-player-bar-height, 72px)) !important;
+  bottom: 0 !important;
+}
+:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] #content[slot="content"] {
+  margin-top: var(--ytmusic-player-bar-height, 72px) !important;
+  margin-bottom: 0 !important;
+}
+:root[data-yme-player-position="top"] ytmusic-app-layout[player-visible] :is(#guide-renderer, #mini-guide-renderer) {
+  margin-top: var(--ytmusic-player-bar-height, 72px) !important;
+}
+
+/* Keep playlist search native while giving its input the same comfortable height as search. */
+ytMusic-playlist-shelf-renderer input[placeholder="Find on this page" i],
+input[aria-label="Find on this page" i],
+input[placeholder="Find on this page" i] {
+  box-sizing: border-box !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 48px 0 16px !important;
+  border: 1px solid var(--yt-spec-10-percent-layer, #ffffff33) !important;
+  border-radius: 8px !important;
+  font: 400 16px Roboto, Arial, sans-serif !important;
+  color: var(--yt-spec-text-primary, #fff) !important;
+  background: var(--yt-spec-10-percent-layer, #ffffff1a) !important;
+}
+#filter-search-bar-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-bottom: 0 !important;
+}
+#filter-search-bar-container #filter-search-bar { flex: 1 1 auto !important; min-width: 0 !important; height: 40px !important; }
+#filter-search-bar-container .ytmusicPlaylistFilterSearchShelfClearButton { right: 12px !important; top: 50% !important; transform: translateY(-50%) !important; }
+#filter-search-bar-container + [role="list"] { padding-block-start: 16px !important; }
+#filter-search-bar-container > :last-child { flex: none !important; }
+#filter-search-bar-container > :last-child button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  min-width: 80px !important;
+  padding: 0 16px !important;
+  border: 1px solid var(--yt-spec-10-percent-layer, #ffffff33) !important;
+  border-radius: 20px !important;
+  color: var(--yt-spec-text-primary, #fff) !important;
+  background: var(--yt-spec-10-percent-layer, #ffffff1a) !important;
+  font: 500 14px Roboto, Arial, sans-serif !important;
+  cursor: pointer !important;
+}
+#filter-search-bar-container > :last-child button:hover { background: var(--yt-spec-20-percent-layer, #ffffff33) !important; }
+#filter-search-bar-container > :last-child button:focus-visible { outline: 2px solid var(--yt-spec-call-to-action, #3ea6ff) !important; outline-offset: 2px !important; }
+input[aria-label="Find on this page" i]:focus {
+  outline: 2px solid var(--yt-spec-call-to-action, #3ea6ff) !important;
+  outline-offset: -2px !important;
+}
+

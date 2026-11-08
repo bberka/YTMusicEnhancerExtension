@@ -1,0 +1,24 @@
+:root { color-scheme: dark light; font: 14px/1.6 "Segoe UI", Roboto, Arial, sans-serif; background: #101012; color: #f4f4f5; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid #ef4057; outline-offset: 4px; }
+.topbar { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 12px max(20px, calc((100vw - 960px) / 2)); border-bottom: 1px solid #333338; }
+.brand { font-weight: 600; }
+.help-link { color: #a1a1aa; }
+main { max-width: 800px; margin: auto; padding: 32px 20px 64px; }
+h1 { margin: 0; font-size: 32px; letter-spacing: -.04em; }
+h2 { margin: 0 0 10px; font-size: 18px; }
+.eyebrow { color: #a1a1aa; margin: 0 0 8px; }
+.lede, .help-section p { color: #a1a1aa; }
+.help-section { padding: 24px 0; border-bottom: 1px solid #333338; }
+.help-section strong { color: #f4f4f5; }
+code { padding: 3px 6px; border-radius: 4px; background: #27272a; }
+@media (prefers-color-scheme: light) {
+  :root { background: #f7f7f8; color: #18181b; }
+  .topbar, .help-section { border-color: #dedee3; }
+  .lede, .eyebrow, .help-link, .help-section p { color: #66666e; }
+  .help-section strong { color: #18181b; }
+  code { background: #e4e4e7; }
+}

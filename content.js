@@ -1,49 +1,66 @@
+import { createSidebarEnhancer } from "./sidebar.js";
+import { installExploreCache } from "./explore-cache.js";
+import { createPlayerSizer } from "./player-size.js";
+import { createLibraryView } from "./library-view.js";
+
 (() => {
   const extensionApi = globalThis.browser ?? globalThis.chrome;
   const predefinedShortcuts = [
-    { id: "library", label: "Library", path: "/library", icon: "library", enabled: true },
-    { id: "downloads", label: "Downloads", path: "/library/downloads", icon: "download", enabled: true },
+    { id: "home", label: "Home", path: "/", icon: "home", enabled: true, native: true },
+    { id: "explore", label: "Explore", path: "/explore", icon: "explore", enabled: true, native: true },
+    { id: "library", label: "Library", path: "/library", icon: "library", enabled: true, native: true },
     { id: "playlists", label: "Playlists", path: "/library/playlists", icon: "playlist", enabled: true },
-    { id: "songs", label: "Songs", path: "/library/songs", icon: "song", enabled: true },
-    { id: "albums", label: "Albums", path: "/library/albums", icon: "album", enabled: true },
-    { id: "artists", label: "Artists", path: "/library/artists", icon: "artist", enabled: true },
-    { id: "profiles", label: "Profiles", path: "/library/channels", icon: "profile", enabled: true },
-    { id: "podcasts", label: "Podcasts", path: "/library/podcasts", icon: "podcast", enabled: true },
+    { id: "downloads", label: "Downloads", path: "/browse/FEmusic_offline", icon: "download", enabled: false },
+    { id: "songs", label: "Songs", path: "/library/songs", icon: "song", enabled: false },
+    { id: "albums", label: "Albums", path: "/library/albums", icon: "album", enabled: false },
+    { id: "artists", label: "Artists", path: "/library/artists", icon: "artist", enabled: false },
+    { id: "profiles", label: "Profiles", path: "/library/channels", icon: "profile", enabled: false },
+    { id: "podcasts", label: "Podcasts", path: "/library/podcasts", icon: "podcast", enabled: false },
   ];
   const defaults = {
-    quickActions: ["preview", "remove", "queue", "next"],
+    quickActions: ["like", "queue"],
     quickActionsEnabled: true,
     actionColor: "match",
     menuColor: "match",
     primaryColor: "red",
-    shuffleOnOpen: true,
+    sidebarWidth: 100,
     sidebarIcons: true,
+    compactSidebar: false,
+    compactLibrary: true,
+    compactPlaylistSidebar: false,
+    hideNewPlaylist: true,
     sidebarShortcuts: predefinedShortcuts,
+    sidebarOrderVersion: 1,
     largeProgress: true,
+    playerPosition: "bottom",
     rememberVolume: false,
-    commentsEnabled: true,
   };
+  const likedMusicArtwork = "https://www.gstatic.com/youtube/media/ytm/images/pbg/liked-songs-delhi-1200.png";
   const actionLabels = {
+    like: { button: "Like", match: null },
     preview: { button: "Side play", match: null },
     remove: { button: "Remove", match: /remove from playlist/i },
     queue: { button: "Queue", match: /add to queue/i },
-    next: { button: "Play next", match: /play next/i },
+    addPlaylist: { button: "Add to playlist", match: /add to playlist/i },
+    radio: { button: "Start radio", match: /(?:start|go to) radio/i },
+    artist: { button: "Go to artist", match: /(?:go to|view) artist/i },
+    album: { button: "Go to album", match: /(?:go to|view) album/i },
+    share: { button: "Share", match: /^share(?:\s|$)/i },
   };
-  const icons = [
-    [/home/i, "home"],
-    [/explore|discover/i, "explore"],
-    [/library/i, "library"],
-    [/liked|favorites/i, "liked"],
-    [/playlist|mix/i, "playlist"],
-    [/podcast/i, "podcast"],
-    [/radio/i, "radio"],
-  ];
   const iconPaths = {
+    like: "M7 10v10H3V10h4Zm0 9h10a2 2 0 0 0 2-1.6l1-5A2 2 0 0 0 18 10h-4l1-5a2 2 0 0 0-2-2l-1 4-5 5",
+    preview: "M3 5h18v14H3zM15 5v14M6 9l5 3-5 3Z",
+    remove: "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7",
+    queue: "M3 5h14M3 9h14M3 13h8M17 13v8M13 17h8",
+    next: "M4 5v14l10-7ZM18 5v14",
+    addPlaylist: "M3 6h12M3 10h12M3 14h8M18 13v8M14 17h8",
+    share: "M18 8a3 3 0 1 0-2.8-4M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm12 6a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM8.6 10.5l6.8-4M8.6 13.5l6.8 4",
     home: "M3 10.5 12 3l9 7.5M5.5 9v11h13V9M9 20v-6h6v6",
     explore: "M10.5 3a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15ZM16 16l5 5M8 13l2-5 5-2-2 5-5 2Z",
+    search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm6-2 4 4",
     library: "M4 5h16v15H4zM8 9h8M8 12h8M8 15h5",
     liked: "M20.8 8.7c0 5.1-8.8 11-8.8 11s-8.8-5.9-8.8-11A4.7 4.7 0 0 1 12 6a4.7 4.7 0 0 1 8.8 2.7Z",
-    playlist: "M4 5h12M4 9h12M4 13h8M19 4v12.5a2.5 2.5 0 1 1-2-2.45V7l5-1v8.5a2.5 2.5 0 1 1-2-2.45",
+    playlist: "M3 6h11M3 10h11M3 14h7M21 15V4l-4 1M21 15a3 3 0 1 1-6 0a3 3 0 0 1 6 0",
     podcast: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6.5 7.5a8 8 0 0 0 0 9M17.5 7.5a8 8 0 0 1 0 9M3 4a12 12 0 0 0 0 16M21 4a12 12 0 0 1 0 16",
     radio: "M4 8h16v12H4zM4 8l15-5M8 12h.01M12 12h.01M16 12h.01M8 16h8",
     download: "M12 3v12m0 0 5-5m-5 5-5-5M4 20h16",
@@ -53,12 +70,16 @@
     profile: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0",
     grid: "M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z",
     list: "M3 5h2v2H3zm4 0h14v2H7zM3 11h2v2H3zm4 0h14v2H7zM3 17h2v2H3zm4 0h14v2H7z",
+    chevronDown: "M6 9l6 6 6-6",
   };
 
   let settings = { ...defaults };
+  let shuffleEnabled = true;
+  let applyingShuffle = false;
+  let shuffleTimer;
+  let observedPlayer = null;
+  const shuffleObserver = new MutationObserver(() => scheduleShuffleSync());
   let scheduled = false;
-  let lastPlaylistKey = "";
-  let shufflePendingKey = "";
   let libraryCache = {};
   let libraryView = "grid";
   let lastVolume = null;
@@ -68,30 +89,57 @@
   const patchedRows = new WeakMap();
   const patchedVolumeControls = new WeakSet();
   const patchedMedia = new WeakSet();
-  const modifiedProgress = new Map();
+  const updatePlayerSize = createPlayerSizer(deepFind);
+  const updateExplore = installExploreCache({ storage: extensionApi.storage.local, deepFind });
 
   function getText(node) {
     return (node?.innerText || node?.textContent || "").replace(/\s+/g, " ").trim();
   }
 
+  const scrollbarRoots = new WeakSet();
+  function styleScrollbar(root) {
+    if (!root || scrollbarRoots.has(root)) return;
+    scrollbarRoots.add(root);
+    const style = document.createElement("style");
+    style.textContent = `
+      :host, :host *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override) { scrollbar-width:auto!important; scrollbar-color:auto!important; }
+      :host::-webkit-scrollbar, :host *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar { display:block!important; width:3px!important; height:3px!important; }
+      :host::-webkit-scrollbar-thumb, :host *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-thumb { background:#777!important; border-radius:4px!important; }
+      :host::-webkit-scrollbar-track, :host *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-track { background:transparent!important; }
+      :host::-webkit-scrollbar-button, :host *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override)::-webkit-scrollbar-button { display:none!important; width:0!important; height:0!important; }
+      @supports (-moz-appearance: none) { :host, :host *:not(#yme-scrollbar-override#yme-scrollbar-override#yme-scrollbar-override) { scrollbar-width:thin!important; scrollbar-color:#777 transparent!important; } }
+    `;
+    root.append(style);
+  }
+
   function deepFind(root, selector, results = []) {
     if (!root) return results;
     if (root.querySelectorAll) results.push(...root.querySelectorAll(selector));
-    if (root.shadowRoot) deepFind(root.shadowRoot, selector, results);
+    if (root.shadowRoot) {
+      styleScrollbar(root.shadowRoot);
+      deepFind(root.shadowRoot, selector, results);
+    }
     const elements = root.querySelectorAll ? root.querySelectorAll("*") : [];
     for (const element of elements) {
-      if (element.shadowRoot) deepFind(element.shadowRoot, selector, results);
+      if (element.shadowRoot) {
+        styleScrollbar(element.shadowRoot);
+        deepFind(element.shadowRoot, selector, results);
+      }
     }
     return results;
   }
 
   function setPageSettings() {
     const root = document.documentElement;
+    const width = typeof settings.sidebarWidth === "number" && Number.isFinite(settings.sidebarWidth) ? Math.min(150, Math.max(75, settings.sidebarWidth)) : 100;
+    root.style.setProperty("--yme-sidebar-width", `${width * 2.4}px`);
     root.dataset.ymeActionColor = settings.actionColor;
     root.dataset.ymeMenuColor = settings.menuColor;
     root.dataset.ymePrimaryColor = settings.primaryColor;
+    root.dataset.ymePlayerPosition = settings.playerPosition === "top" ? "top" : "bottom";
     root.classList.toggle("yme-large-progress", settings.largeProgress);
     root.classList.toggle("yme-sidebar-icons", settings.sidebarIcons);
+    root.classList.toggle("yme-compact-sidebar", settings.compactSidebar);
     root.style.setProperty("--yme-menu-accent", colorValue(settings.menuColor, colorValue(settings.primaryColor, "#ff4e55")));
   }
 
@@ -99,63 +147,59 @@
     return ({ red: "#ff4e55", blue: "#4b9cff", green: "#4cbd82", purple: "#b07cff", plain: "#a8aaa8", match: fallback })[name] || fallback;
   }
 
-  function setOwnedStyle(element, property, value) {
-    let originals = modifiedProgress.get(element);
-    if (!originals) {
-      originals = new Map();
-      modifiedProgress.set(element, originals);
-    }
-    if (!originals.has(property)) {
-      originals.set(property, [element.style.getPropertyValue(property), element.style.getPropertyPriority(property)]);
-    }
-    if (value == null) {
-      const [original, priority] = originals.get(property);
-      if (original) element.style.setProperty(property, original, priority);
-      else element.style.removeProperty(property);
-      originals.delete(property);
-      if (!originals.size) modifiedProgress.delete(element);
-      return;
-    }
-    element.style.setProperty(property, value, "important");
-  }
-
-  function updateProgressBar() {
-    if (!settings.largeProgress) {
-      for (const [element, originals] of modifiedProgress) {
-        for (const property of [...originals.keys()]) setOwnedStyle(element, property, null);
-      }
-      return;
-    }
-    for (const root of document.querySelectorAll("ytmusic-player-bar, ytmusic-miniplayer, ytmusic-player-page")) {
-      const targets = deepFind(root, "#progress-bar, tp-yt-paper-slider, #sliderContainer, .slider-container");
-      for (const element of targets) {
-        if (/volume/i.test(`${element.id} ${element.getAttribute("aria-label") || ""}`)) continue;
-        if (element.matches("tp-yt-paper-slider, #progress-bar")) setOwnedStyle(element, "--paper-slider-height", "8px");
-        if (element.matches("#sliderContainer, .slider-container")) {
-          setOwnedStyle(element, "height", "8px");
-          setOwnedStyle(element, "min-height", "8px");
-        }
-      }
-    }
-  }
-
-  function updateMenuColors() {
+  function updateContextMenus() {
     const css = `
-      tp-yt-paper-item:hover, [role="menuitem"]:hover, ytmusic-menu-service-item-renderer:hover {
+      ytmusic-menu-popup-renderer, :host(ytmusic-menu-popup-renderer),
+      ytmusic-menu-popup-renderer tp-yt-paper-listbox, :host(ytmusic-menu-popup-renderer) tp-yt-paper-listbox {
+        padding-block: 0 !important;
+        margin-block: 0 !important;
+      }
+      ytmusic-menu-popup-renderer, :host(ytmusic-menu-popup-renderer) {
+        box-sizing: border-box !important;
+        width: max-content !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 24px) !important;
+        overflow-x: hidden !important;
+      }
+      ytmusic-menu-popup-renderer tp-yt-paper-listbox, :host(ytmusic-menu-popup-renderer) tp-yt-paper-listbox {
+        box-sizing: border-box !important;
+        width: max-content !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+      }
+      ytmusic-menu-popup-renderer [role="menuitem"], :host(ytmusic-menu-popup-renderer) [role="menuitem"],
+      ytmusic-menu-popup-renderer #navigation-endpoint, :host(ytmusic-menu-popup-renderer) #navigation-endpoint {
+        box-sizing: border-box !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 36px !important;
+        padding-block: 0 !important;
+      }
+      ytmusic-menu-popup-renderer .text, :host(ytmusic-menu-popup-renderer) .text {
+        min-width: 0 !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+      }
+      ytmusic-menu-popup-renderer :is(tp-yt-paper-item, [role="menuitem"], ytmusic-menu-service-item-renderer):hover,
+      :host(ytmusic-menu-popup-renderer) :is(tp-yt-paper-item, [role="menuitem"], ytmusic-menu-service-item-renderer):hover {
         background-color: color-mix(in srgb, var(--yme-menu-accent, #ff4e55) 18%, transparent) !important;
       }
-      tp-yt-paper-item:focus-visible, [role="menuitem"]:focus-visible, ytmusic-menu-service-item-renderer:focus-visible {
+      ytmusic-menu-popup-renderer :is(tp-yt-paper-item, [role="menuitem"], ytmusic-menu-service-item-renderer):focus-visible,
+      :host(ytmusic-menu-popup-renderer) :is(tp-yt-paper-item, [role="menuitem"], ytmusic-menu-service-item-renderer):focus-visible {
         outline: 2px solid var(--yme-menu-accent, #ff4e55) !important;
         outline-offset: -2px;
       }`;
-    for (const menu of document.querySelectorAll("ytmusic-menu-popup-renderer")) {
+    for (const menu of deepFind(document, "ytmusic-menu-popup-renderer")) {
       menu.style.setProperty("--yme-menu-accent", colorValue(settings.menuColor, colorValue(settings.primaryColor, "#ff4e55")));
-      const shadow = menu.shadowRoot;
-      if (shadow && !shadow.querySelector("style[data-yme-menu-style]")) {
-        const style = document.createElement("style");
-        style.dataset.ymeMenuStyle = "true";
-        style.textContent = css;
-        shadow.append(style);
+      for (const root of [document, menu.shadowRoot].filter(Boolean)) {
+        if (!root.querySelector("style[data-yme-menu-style]")) {
+          const style = document.createElement("style");
+          style.dataset.ymeMenuStyle = "true";
+          style.textContent = css;
+          (root === document ? document.head : root).append(style);
+        }
       }
     }
   }
@@ -174,7 +218,7 @@
     if (typeof value !== "string") return null;
     try {
       const url = new URL(value, location.origin);
-      if (url.protocol !== "https:" || !/(^|\.)googleusercontent\.com$|(^|\.)ytimg\.com$/i.test(url.hostname)) return null;
+      if (url.protocol !== "https:" || (!/(^|\.)googleusercontent\.com$|(^|\.)ytimg\.com$/i.test(url.hostname) && url.href !== likedMusicArtwork)) return null;
       return url.href;
     } catch {
       return null;
@@ -206,7 +250,10 @@
   }
 
   function playlistThumbnail(entry) {
+    const exposed = safeThumbnailUrl(entry.dataset.ymeThumbnail);
+    if (exposed) return exposed;
     for (const image of deepFind(entry, "img, yt-img-shadow")) {
+      if (image.closest(".yme-library-art, ytmusic-menu-renderer, .menu, .subtitle-group, .subtitle, #inline-badges, .avatar, .owner")) continue;
       const innerImage = image.matches("img") ? image : deepFind(image, "img")[0];
       const url = safeThumbnailUrl(innerImage?.currentSrc || innerImage?.src || image.getAttribute("src"));
       if (url) return url;
@@ -216,6 +263,7 @@
       const url = thumbnailFromData(data);
       if (url) return url;
     }
+    if (["LM", "VLLM"].includes(playlistIdFromEntry(entry))) return likedMusicArtwork;
     return null;
   }
 
@@ -288,6 +336,7 @@
   }
 
   function playlistIdFromEntry(entry) {
+    if (entry.dataset.ymePlaylistId) return entry.dataset.ymePlaylistId;
     const anchor = deepFind(entry, "a[href*='list=']")[0];
     if (anchor) {
       try { return new URL(anchor.href, location.origin).searchParams.get("list"); } catch { /* Ignore malformed site URLs. */ }
@@ -315,6 +364,7 @@
 
   function rememberLibraryImage(id, thumbnail) {
     if (!id || !thumbnail) return;
+    if (libraryCache[id]?.thumbnail === thumbnail) return;
     libraryCache[id] = { thumbnail, savedAt: Date.now() };
     const entries = Object.entries(libraryCache)
       .filter(([, value]) => Date.now() - value.savedAt < 7 * 24 * 60 * 60 * 1000)
@@ -324,13 +374,22 @@
     cacheWriteTimer = setTimeout(() => extensionApi.storage.local.set({ ymeLibraryArtworkCache: libraryCache }), 500);
   }
 
-  function mergeSidebarShortcuts(stored) {
-    const saved = Array.isArray(stored) ? stored.filter((entry) => entry && typeof entry.path === "string" && entry.path.startsWith("/") && !entry.path.startsWith("//")) : [];
+  function mergeSidebarShortcuts(stored, orderVersion = 0) {
+    const saved = Array.isArray(stored) ? stored.filter((entry) => entry
+      && typeof entry.id === "string" && typeof entry.label === "string"
+      && typeof entry.path === "string" && entry.path.startsWith("/") && !entry.path.startsWith("//") && !entry.path.includes("\\")) : [];
     const byId = new Map(saved.map((entry) => [entry.id, entry]));
-    return [
-      ...saved.map((entry) => ({ ...predefinedShortcuts.find((item) => item.id === entry.id), ...entry, enabled: entry.enabled !== false })),
+    const normalized = [
+      ...saved.map((entry) => {
+        const preset = predefinedShortcuts.find((item) => item.id === entry.id);
+        return { ...preset, ...entry, path: entry.id === "downloads" ? "/browse/FEmusic_offline" : entry.path, native: Boolean(preset?.native), enabled: entry.enabled !== false };
+      }),
       ...predefinedShortcuts.filter((entry) => !byId.has(entry.id)),
     ];
+    const legacy = orderVersion !== 1;
+    return legacy
+      ? [...predefinedShortcuts.filter((entry) => entry.native).map((entry) => ({ ...entry, enabled: byId.get(entry.id)?.enabled !== false })), ...normalized.filter((entry) => !entry.native)]
+      : normalized;
   }
 
   function playlistKey() {
@@ -352,32 +411,39 @@
     const info = actionLabels[action];
     button.type = "button";
     button.className = "yme-quick-action";
-    button.textContent = info.button;
-    button.title = info.match.source.replaceAll("\\s", " ");
+    button.dataset.ymeAction = action;
+    button.append(makeIcon(action));
+    button.title = info.button;
     button.setAttribute("aria-label", `${info.button} this track`);
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
+      if (action === "like") {
+        const rating = deepFind(row, "ytmusic-like-button-renderer")[0];
+        const buttons = rating ? deepFind(rating, "button, [role=button], yt-icon-button") : [];
+        const like = buttons.find((element) => /(^|\b)(like|unlike)(\b|$)/i.test(`${element.getAttribute("aria-label") || ""} ${element.getAttribute("title") || ""}`) && !/dislike/i.test(`${element.getAttribute("aria-label") || ""} ${element.getAttribute("title") || ""}`)) || (rating && deepFind(rating, "#like-button button, #like-button")[0]);
+        if (like) like.click();
+        else showNotice("Like is unavailable for this track.");
+        return;
+      }
       if (action === "preview") {
         openSidePlay(row);
         return;
       }
-      runNativeAction(row, info.match);
+      const request = new CustomEvent("yme-row-action", { bubbles: true, composed: true, cancelable: true });
+      if (button.dispatchEvent(request)) showNotice("That action isn’t available for this track.");
     });
     return button;
   }
 
   function openSidePlay(row) {
-    const trackLink = row.querySelector("a[href*='/watch?v=']") || deepFind(row, "a[href*='/watch?v=']")[0];
-    if (!trackLink) {
-      showNotice("Couldn’t identify this track for side play.");
-      return;
-    }
-    let videoId;
-    try {
-      videoId = new URL(trackLink.href, location.origin).searchParams.get("v");
-    } catch {
-      videoId = null;
+    const trackLink = deepFind(row, "a[href]").find((link) => {
+      try { const url = new URL(link.href, location.origin); return url.pathname === "/watch" && url.searchParams.has("v"); }
+      catch { return false; }
+    });
+    let videoId = row.dataset.ymeVideoId || null;
+    if (!videoId && trackLink) {
+      try { videoId = new URL(trackLink.href, location.origin).searchParams.get("v"); } catch { videoId = null; }
     }
     if (!videoId || !/^[\w-]{6,20}$/.test(videoId)) {
       showNotice("Couldn’t identify this track for side play.");
@@ -443,26 +509,20 @@
     }) || deepFind(row, "ytmusic-menu-renderer")[0];
   }
 
-  function runNativeAction(row, matcher, attempt = 0) {
-    const trigger = findRowMenuButton(row);
-    if (!trigger) {
-      showNotice("Couldn’t find this track’s menu. Use YouTube Music’s three-dot menu.");
-      return;
-    }
-
-    if (attempt === 0) trigger.click();
-    requestAnimationFrame(() => {
-      const menuItems = deepFind(document, "ytmusic-menu-service-item-renderer, tp-yt-paper-item, [role='menuitem']");
-      const item = menuItems.find((candidate) => matcher.test(getText(candidate)) && candidate.getClientRects().length);
-      if (item) {
-        item.click();
-      } else if (attempt < 8) {
-        setTimeout(() => runNativeAction(row, matcher, attempt + 1), 55);
-      } else {
-        showNotice("That action isn’t available here. The playlist may be read-only.");
-      }
-    });
-  }
+  // Open the native song menu from the player bar or anywhere on a song row.
+  document.addEventListener("contextmenu", (event) => {
+    if (event.defaultPrevented || event.shiftKey) return;
+    const path = event.composedPath();
+    if (path.some((node) => node instanceof Element && node.matches("input, textarea, select, .yme-quick-action"))) return;
+    const bar = path.find((node) => node instanceof Element && node.matches("ytmusic-player-bar"));
+    const row = path.find((node) => node instanceof Element && node.matches("ytmusic-responsive-list-item-renderer"));
+    const menu = bar && deepFind(bar, "ytmusic-menu-renderer")[0];
+    const trigger = menu ? findRowMenuButton(menu) : row ? findRowMenuButton(row) : null;
+    if (!trigger) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    trigger.click();
+  }, true);
 
   function showNotice(message) {
     let notice = document.querySelector("#yme-notice");
@@ -483,6 +543,8 @@
     for (const row of document.querySelectorAll("ytmusic-responsive-list-item-renderer")) {
       if (!row.querySelector("ytmusic-menu-renderer") && !deepFind(row, "ytmusic-menu-renderer").length) continue;
 
+      row.classList.add("yme-has-actions");
+      row.classList.add("yme-has-like");
       let bar = row.querySelector(":scope > .yme-quick-actions");
       const actionKey = settings.quickActions.join(",");
       if (bar && patchedRows.get(row) === actionKey) continue;
@@ -494,184 +556,281 @@
         if (actionLabels[action]) bar.append(createQuickAction(action, row));
       }
       row.append(bar);
+      const positionActions = () => {
+        const menu = deepFind(row, "ytmusic-menu-renderer")[0];
+        if (!menu) return;
+        const rowBox = row.getBoundingClientRect();
+        const menuBox = (findRowMenuButton(menu) || menu).getBoundingClientRect();
+        if (!rowBox.width || !menuBox.width) return;
+        const rtl = getComputedStyle(row).direction === "rtl";
+        const offset = rtl ? menuBox.right - rowBox.left : rowBox.right - menuBox.left;
+        bar.style.insetInlineEnd = `${Math.max(48, Math.ceil(offset + 4))}px`;
+      };
+      if (row.ymePositionActions) {
+        row.removeEventListener("pointerenter", row.ymePositionActions);
+        row.removeEventListener("focusin", row.ymePositionActions);
+      }
+      row.ymePositionActions = positionActions;
+      row.addEventListener("pointerenter", positionActions);
+      row.addEventListener("focusin", positionActions);
+      positionActions();
       patchedRows.set(row, actionKey);
     }
   }
 
-  function enhanceSidebar() {
-    if (settings.sidebarIcons) {
-      for (const entry of document.querySelectorAll("ytmusic-guide-library-entry-renderer:not([data-yme-icon-checked])")) {
-        entry.dataset.ymeIconChecked = "true";
-        const hasNativeIcon = deepFind(entry, "yt-icon, yt-img-shadow, img").some((icon) => icon.getClientRects().length);
-        if (hasNativeIcon) continue;
-        const text = getText(entry);
-        const id = playlistIdFromEntry(entry);
-        const liveThumbnail = playlistThumbnail(entry);
-        if (id && liveThumbnail) rememberLibraryImage(id, liveThumbnail);
-        const thumbnail = liveThumbnail || (id && libraryCache[id]?.thumbnail);
-        entry.dataset.ymeIconKind = /download/i.test(text)
-          ? "download"
-          : /liked|favorite/i.test(text)
-            ? "liked"
-            : /radio/i.test(text)
-              ? "radio"
-              : "playlist";
-        if (thumbnail) {
-          entry.dataset.ymeHasArt = "true";
-          entry.style.setProperty("--yme-playlist-art", `url("${thumbnail.replaceAll('"', "%22")}")`);
-        }
-      }
-    }
+  const updateSidebar = createSidebarEnhancer({
+    deepFind,
+    makeIcon,
+    scheduleUpdate,
+    thumbnail: playlistThumbnail,
+    playlistId: playlistIdFromEntry,
+    rememberImage: rememberLibraryImage,
+    cachedImage: (id) => safeThumbnailUrl(libraryCache[id]?.thumbnail),
+  });
 
-    const host = document.querySelector("ytmusic-guide-renderer") || document.querySelector("ytmusic-guide-content-renderer");
-    if (!host) return;
-    let shortcutList = document.querySelector("#yme-sidebar-shortcuts");
-    if (!shortcutList) {
-      shortcutList = document.createElement("div");
-      shortcutList.id = "yme-sidebar-shortcuts";
-      shortcutList.setAttribute("aria-label", "Music Enhancer shortcuts");
-    }
-    const libraryEntry = [...document.querySelectorAll("ytmusic-guide-entry-renderer")]
-      .find((entry) => /^library$/i.test(getText(entry)));
-    if (libraryEntry?.parentElement) libraryEntry.after(shortcutList);
-    else if (shortcutList.parentElement !== host) host.append(shortcutList);
-    const visibleShortcuts = (settings.sidebarShortcuts || []).filter((shortcut) => shortcut.enabled !== false);
-    const signature = JSON.stringify(visibleShortcuts);
-    if (shortcutList.dataset.signature === signature) return;
-    shortcutList.replaceChildren();
-    shortcutList.dataset.signature = signature;
-    for (const shortcut of visibleShortcuts) {
-      if (!shortcut?.label || !shortcut.path?.startsWith("/") || shortcut.path.startsWith("//")) continue;
-      const link = document.createElement("a");
-      link.className = "yme-sidebar-shortcut";
-      link.href = shortcut.path;
-      link.title = shortcut.label;
-      const icon = iconPaths[shortcut.icon] ? shortcut.icon : "playlist";
-      const iconNode = document.createElement("span");
-      iconNode.className = "yme-sidebar-icon";
-      iconNode.append(makeIcon(icon));
-      const label = document.createElement("span");
-      label.textContent = shortcut.label;
-      link.append(iconNode, label);
-      shortcutList.append(link);
-    }
-  }
-
-  function enableShuffleForNewPlaylist() {
-    const key = playlistKey();
-    if (!key || !settings.shuffleOnOpen || key === lastPlaylistKey || key === shufflePendingKey) return;
-    shufflePendingKey = key;
-    const attempt = (count = 0) => {
-      if (key !== playlistKey() || !settings.shuffleOnOpen) {
-        if (shufflePendingKey === key) shufflePendingKey = "";
-        return;
-      }
-      const buttons = deepFind(document, "button, [role='button'], yt-icon-button");
-      const shuffle = buttons.find((button) => {
-        const label = `${button.getAttribute("aria-label") || ""} ${button.getAttribute("title") || ""}`;
-        return /shuffle/i.test(label);
-      });
-      if (shuffle) {
-        shufflePendingKey = "";
-        lastPlaylistKey = key;
-        const label = `${shuffle.getAttribute("aria-label") || ""} ${shuffle.getAttribute("title") || ""}`;
-        if (shuffle.getAttribute("aria-pressed") !== "true" && !/turn off|disable|stop/i.test(label)) shuffle.click();
-      } else if (count < 8) {
-        setTimeout(() => attempt(count + 1), 90);
-      } else if (shufflePendingKey === key) {
-        shufflePendingKey = "";
-      }
-    };
-    requestAnimationFrame(() => attempt());
-  }
-
-  function updateLibraryViewSelector() {
+  function cacheRenderedLibraryArtwork() {
     if (!location.pathname.startsWith("/library")) return;
-    const controls = deepFind(document, "ytmusic-sort-filter-button-renderer, tp-yt-paper-button, button, [role='button']");
-    const recent = controls.find((element) => /recent activity/i.test(`${getText(element)} ${element.getAttribute("aria-label") || ""} ${element.getAttribute("title") || ""}`));
-    if (!recent?.parentElement) return;
+    for (const card of deepFind(document, "ytmusic-two-row-item-renderer")) {
+      const id = playlistIdFromEntry(card);
+      if (id) rememberLibraryImage(id, playlistThumbnail(card));
+    }
+  }
 
-    const id = "yme-library-view-selector";
-    let selector = document.getElementById(id);
-    if (!selector) {
-      selector = document.createElement("div");
-      selector.id = id;
-      selector.setAttribute("aria-label", "Library layout");
-      selector.className = "yme-library-view-selector";
-      for (const view of ["list", "grid"]) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "yme-library-view-button";
-        button.dataset.view = view;
-        button.setAttribute("aria-label", `${view === "list" ? "List" : "Grid"} view`);
-        button.title = `${view === "list" ? "List" : "Grid"} view`;
-        button.append(makeIcon(view));
-        button.addEventListener("click", () => setLibraryView(view));
-        selector.append(button);
+  // Route collection play actions through YouTube Music's shuffle endpoint.
+  const collectionSelector = "ytmusic-two-row-item-renderer, ytmusic-responsive-list-item-renderer, ytmusic-detail-header-renderer, ytmusic-responsive-header-renderer, ytmusic-editable-playlist-detail-header-renderer, ytmusic-guide-entry-renderer, ytmusic-guide-library-entry-renderer";
+  function collectionType(container) {
+    if (container.dataset.ymePlaylistId) return /^OLAK5uy_/i.test(container.dataset.ymePlaylistId) ? "album" : "playlist";
+    const links = deepFind(container, "a[href]");
+    const paths = links.map((link) => link.getAttribute("href") || "");
+    // A song row can contain album and playlist links in its metadata.
+    if (container.matches("ytmusic-responsive-list-item-renderer") && paths.some((path) => /^\/watch(?:\?|$)/i.test(path))) return null;
+    const text = `${container.getAttribute("aria-label") || ""} ${container.textContent || ""}`;
+    if (paths.some((path) => /\/browse\/MPRE|[?&]list=OLAK5uy_/i.test(path)) || /\balbum\b/i.test(text)) return "album";
+    if (paths.some((path) => /\/playlist\?|[?&]list=|\/browse\/VL/i.test(path)) || /\bplaylist\b/i.test(text)) return "playlist";
+    if (container.matches("ytmusic-detail-header-renderer, ytmusic-responsive-header-renderer, ytmusic-editable-playlist-detail-header-renderer")) {
+      if (/^\/browse\/MPRE/i.test(location.pathname) || /^OLAK5uy_/i.test(new URLSearchParams(location.search).get("list") || "")) return "album";
+      if (location.pathname === "/playlist") return "playlist";
+    }
+    return null;
+  }
+  function labelOf(node) {
+    return `${node.getAttribute("aria-label") || ""} ${node.getAttribute("title") || ""} ${node.textContent || ""}`.trim();
+  }
+  function scheduleShuffleSync() {
+    if (shuffleTimer) return;
+    shuffleTimer = setTimeout(() => {
+      shuffleTimer = null;
+      const bar = document.querySelector("ytmusic-player-bar");
+      const button = bar?.querySelector("yt-icon-button.shuffle button, #expand-shuffle button");
+      if (!bar || !button || button.disabled || !bar.getClientRects().length) return;
+      if (bar.hasAttribute("shuffle-on") !== shuffleEnabled) {
+        applyingShuffle = true;
+        button.click();
+        applyingShuffle = false;
       }
+    }, 300);
+  }
+  function updateShuffleState() {
+    const bar = document.querySelector("ytmusic-player-bar");
+    if (bar !== observedPlayer) {
+      shuffleObserver.disconnect();
+      observedPlayer = bar;
+      if (bar) shuffleObserver.observe(bar, { attributes: true, attributeFilter: ["shuffle-on"] });
     }
-    const parent = recent.parentElement;
-    if (selector.parentElement !== parent || selector.nextElementSibling !== recent) parent.insertBefore(selector, recent);
-    paintLibraryViewSelector();
-    const styleRoot = recent.getRootNode();
-    if (styleRoot?.querySelector && !styleRoot.querySelector("style[data-yme-library-view-style]")) {
+    scheduleShuffleSync();
+  }
+  document.addEventListener("click", (event) => {
+    if (applyingShuffle) return;
+    const path = event.composedPath();
+    const bar = path.find(node => node instanceof Element && node.matches("ytmusic-player-bar"));
+    if (!bar || !path.some(node => node instanceof Element && node.matches("yt-icon-button.shuffle, #expand-shuffle"))) return;
+    shuffleEnabled = !bar.hasAttribute("shuffle-on");
+    clearTimeout(shuffleTimer);
+    shuffleTimer = null;
+    extensionApi.storage.local.set({ ymeShuffleEnabled: shuffleEnabled });
+  }, true);
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    const path = event.composedPath();
+    const play = path.find((node) => node instanceof Element && (node.matches("ytmusic-play-button-renderer") || node.matches("button, [role=button], yt-icon-button") && /^play(?:\s|$)/i.test(labelOf(node))));
+    if (!play || /pause|shuffle/i.test(labelOf(play))) return;
+    const container = path.find((node) => node instanceof Element && node.matches(collectionSelector));
+    if (!container) return;
+    const type = collectionType(container);
+    if (!shuffleEnabled || !type) return;
+    const request = new CustomEvent("yme-shuffle-play", { bubbles: true, composed: true, cancelable: true });
+    if (!play.dispatchEvent(request)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+    const nativeShuffle = deepFind(container, "button, [role=button], yt-button-renderer, yt-icon-button").find((node) => /shuffle/i.test(labelOf(node)));
+    if (nativeShuffle) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      nativeShuffle.click();
+    }
+  }, true);
+
+  let playlistSearch = null;
+  let playlistSearchPending = false;
+
+  function openNativePlaylistSearch(key) {
+    if (playlistSearchPending) return;
+    const headers = deepFind(document, "ytmusic-detail-header-renderer, ytmusic-responsive-header-renderer, ytmusic-editable-playlist-detail-header-renderer, ytmusic-playlist-header-renderer");
+    const menu = headers.flatMap((header) => deepFind(header, "ytmusic-menu-renderer"))
+      .find((element) => element.getClientRects().length);
+    const trigger = menu && findRowMenuButton(menu);
+    if (!trigger) {
+      showNotice("Couldn’t find the playlist menu. Open its three-dot menu to search.");
+      return;
+    }
+    playlistSearchPending = true;
+    trigger.click();
+    const started = Date.now();
+    const findAction = () => {
+      if (playlistKey() !== key) { playlistSearchPending = false; return; }
+      const popups = deepFind(document, "ytmusic-menu-popup-renderer, tp-yt-paper-listbox[role='menu']")
+        .filter((popup) => popup.getClientRects().length);
+      const items = popups.flatMap((popup) => deepFind(popup, "ytmusic-menu-service-item-renderer, ytmusic-menu-navigation-item-renderer, tp-yt-paper-item, [role='menuitem']"));
+      const action = items.find((item) => item.getClientRects().length && /(?:find|search) (?:in|within) (?:this )?playlist/i.test(getText(item)));
+      if (action) { playlistSearchPending = false; action.click(); return; }
+      if (Date.now() - started < 1200) { setTimeout(findAction, 50); return; }
+      playlistSearchPending = false;
+      showNotice("Find in playlist isn’t available in this playlist’s menu.");
+    };
+    requestAnimationFrame(findAction);
+  }
+
+  function styleNativePlaylistSearch() {
+    for (const input of deepFind(document, 'input[placeholder="Find on this page" i], input[aria-label="Find on this page" i]')) {
+      const root = input.getRootNode();
+      if (root === document || root.querySelector("style[data-yme-find-input]")) continue;
       const style = document.createElement("style");
-      style.dataset.ymeLibraryViewStyle = "true";
-      style.textContent = `
-        #yme-library-view-selector { display:flex; gap:2px; align-items:center; margin-inline-end:8px; }
-        .yme-library-view-button { width:34px; height:32px; display:grid; place-items:center; border:0; border-radius:6px; background:transparent; color:var(--yt-spec-text-secondary,#aaa); cursor:pointer; }
-        .yme-library-view-button:hover { background:var(--yt-spec-10-percent-layer,#ffffff1a); color:var(--yt-spec-text-primary,#fff); }
-        .yme-library-view-button[aria-pressed="true"] { background:var(--yt-spec-10-percent-layer,#ffffff1a); color:var(--yt-spec-text-primary,#fff); }
-        .yme-library-view-button svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-        :host-context(html[data-yme-library-view="list"]) ytmusic-two-row-item-renderer { width:100%!important; min-height:72px!important; }
-        :host-context(html[data-yme-library-view="list"]) ytmusic-two-row-item-renderer #thumbnail { width:56px!important; height:56px!important; }
+      style.dataset.ymeFindInput = "true";
+      style.textContent = 'input[placeholder="Find on this page" i], input[aria-label="Find on this page" i] { box-sizing:border-box!important;height:40px!important;min-height:40px!important;padding:0 48px 0 16px!important;border:1px solid var(--yt-spec-10-percent-layer,#ffffff33)!important;border-radius:8px!important;font:400 16px Roboto,Arial,sans-serif!important;color:var(--yt-spec-text-primary,#fff)!important;background:var(--yt-spec-10-percent-layer,#ffffff1a)!important; }';
+      style.textContent += `
+        #filter-search-bar-container { display:flex!important; align-items:center!important; gap:12px!important; margin-bottom:0!important; }
+        #filter-search-bar-container #filter-search-bar { flex:1 1 auto!important; min-width:0!important; height:40px!important; }
+        #filter-search-bar-container .ytmusicPlaylistFilterSearchShelfClearButton { right:12px!important; top:50%!important; transform:translateY(-50%)!important; }
+        #filter-search-bar-container + [role="list"] { padding-block-start:16px!important; }
+        #filter-search-bar-container > :last-child { flex:none!important; }
+        #filter-search-bar-container > :last-child button { display:inline-flex!important; align-items:center!important; justify-content:center!important; box-sizing:border-box!important; height:40px!important; min-height:40px!important; min-width:80px!important; padding:0 16px!important; border:1px solid var(--yt-spec-10-percent-layer,#ffffff33)!important; border-radius:20px!important; color:var(--yt-spec-text-primary,#fff)!important; background:var(--yt-spec-10-percent-layer,#ffffff1a)!important; font:500 14px Roboto,Arial,sans-serif!important; cursor:pointer!important; }
+        #filter-search-bar-container > :last-child button:hover { background:var(--yt-spec-20-percent-layer,#ffffff33)!important; }
+        #filter-search-bar-container > :last-child button:focus-visible { outline:2px solid var(--yt-spec-call-to-action,#3ea6ff)!important; outline-offset:2px!important; }
+        input[aria-label="Find on this page" i]:focus { outline:2px solid var(--yt-spec-call-to-action,#3ea6ff)!important; outline-offset:-2px!important; }
       `;
-      if (styleRoot === document) document.head.append(style);
-      else styleRoot.append(style);
+      root.append(style);
     }
   }
 
-  function paintLibraryViewSelector() {
-    document.documentElement.dataset.ymeLibraryView = libraryView;
-    const selector = document.querySelector("#yme-library-view-selector");
-    if (!selector) return;
-    for (const button of selector.querySelectorAll("button[data-view]")) {
-      button.setAttribute("aria-pressed", String(button.dataset.view === libraryView));
+  function updatePlaylistSearch() {
+    const key = playlistKey();
+    const shelf = key && deepFind(document, "ytmusic-playlist-shelf-renderer")[0];
+    const aligned = shelf && deepFind(shelf, "ytmusic-side-aligned-item-renderer")[0];
+    const end = aligned && deepFind(aligned, "#end-items")[0];
+    if (playlistSearch && (playlistSearch.key !== key || playlistSearch.shelf !== shelf || !end || !playlistSearch.button.isConnected)) {
+      playlistSearch.button.remove();
+      playlistSearch = null;
     }
+    if (!end || playlistSearch) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "yme-playlist-search";
+    button.setAttribute("aria-label", "Find in playlist");
+    button.title = "Find in playlist";
+    button.style.cssText = "display:inline-grid;place-items:center;box-sizing:border-box;width:40px;height:40px;padding:8px;border:0;border-radius:50%;background:transparent;color:var(--yt-spec-text-primary,#fff);cursor:pointer";
+    const icon = makeIcon("search");
+    icon.style.cssText = "width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round";
+    button.append(icon);
+    button.addEventListener("click", () => openNativePlaylistSearch(key));
+    end.append(button);
+    playlistSearch = { key, shelf, button };
   }
 
-  function setLibraryView(view) {
-    libraryView = view === "list" ? "list" : "grid";
-    paintLibraryViewSelector();
-    extensionApi.storage.local.set({ ymeLibraryView: libraryView });
-    const nativeControl = deepFind(document, "button, [role='button'], yt-icon-button")
-      .find((element) => !element.closest("#yme-library-view-selector") && new RegExp(`${libraryView} view`, "i").test(`${element.getAttribute("aria-label") || ""} ${element.getAttribute("title") || ""}`));
-    nativeControl?.click();
-  }
+  const updateLibraryView = createLibraryView({
+    deepFind,
+    makeIcon,
+    scheduleUpdate,
+    onChange(view) {
+      libraryView = view;
+      extensionApi.storage.local.set({ ymeLibraryView: view }).catch(() => showNotice("Couldn’t save the Library layout. Try switching it again."));
+    },
+  });
 
   function updatePage() {
     setPageSettings();
-    enhanceSidebar();
+    cacheRenderedLibraryArtwork();
+    updateSidebar(settings);
+    updateExplore();
     const key = playlistKey();
     if (!key || !settings.quickActionsEnabled || !settings.quickActions.length) {
       for (const bar of document.querySelectorAll(".yme-quick-actions")) bar.remove();
+      for (const row of document.querySelectorAll(".yme-has-actions")) {
+        row.classList.remove("yme-has-actions", "yme-has-like");
+        if (row.ymePositionActions) {
+          row.removeEventListener("pointerenter", row.ymePositionActions);
+          row.removeEventListener("focusin", row.ymePositionActions);
+          delete row.ymePositionActions;
+        }
+      }
     }
     enhancePlaylistRows();
-    enableShuffleForNewPlaylist();
-    updateProgressBar();
-    updateMenuColors();
+    updatePlaylistSearch();
+    styleNativePlaylistSearch();
+    updateShuffleState();
+    updatePlayerSize(settings.largeProgress);
+    updateContextMenus();
     bindVolumeControls();
-    updateLibraryViewSelector();
+    updateLibraryView(libraryView);
   }
 
   function relevantMutation(record) {
+    if (record.target.closest?.("ytmusic-player-bar, ytmusic-miniplayer")) return true;
     for (const node of record.addedNodes) {
       if (node.nodeType !== Node.ELEMENT_NODE) continue;
-      if (node.matches?.("ytmusic-responsive-list-item-renderer, ytmusic-guide-entry-renderer, ytmusic-guide-library-entry-renderer, ytmusic-player-bar, ytmusic-menu-popup-renderer, tp-yt-paper-slider, ytmusic-two-row-item-renderer")) return true;
-      if (node.querySelector?.("ytmusic-responsive-list-item-renderer, ytmusic-guide-entry-renderer, ytmusic-guide-library-entry-renderer, ytmusic-player-bar, ytmusic-menu-popup-renderer, tp-yt-paper-slider, ytmusic-two-row-item-renderer")) return true;
+      if (node.matches?.('input[placeholder="Find on this page" i], input[aria-label="Find on this page" i]') || node.querySelector?.('input[placeholder="Find on this page" i], input[aria-label="Find on this page" i]')) return true;
+      if (node.matches?.("ytmusic-responsive-list-item-renderer, ytmusic-guide-entry-renderer, ytmusic-guide-library-entry-renderer, ytmusic-player-bar, ytmusic-menu-popup-renderer, tp-yt-paper-slider, ytmusic-two-row-item-renderer, ytmusic-browse-response, ytmusic-grid-renderer, ytmusic-sort-filter-button-renderer, ytmusic-playlist-shelf-renderer, ytmusic-side-aligned-item-renderer")) return true;
+      if (node.querySelector?.("ytmusic-responsive-list-item-renderer, ytmusic-guide-entry-renderer, ytmusic-guide-library-entry-renderer, ytmusic-player-bar, ytmusic-menu-popup-renderer, tp-yt-paper-slider, ytmusic-two-row-item-renderer, ytmusic-browse-response, ytmusic-grid-renderer, ytmusic-sort-filter-button-renderer, ytmusic-playlist-shelf-renderer, ytmusic-side-aligned-item-renderer")) return true;
       if (node.parentElement?.closest("ytmusic-guide-library-entry-renderer:not([data-yme-icon-checked])")) return true;
     }
     return false;
+  }
+
+  function installHoverGuide() {
+    let pointerInside = false;
+    let focusInside = false;
+    function update() {
+      const app = document.querySelector("ytmusic-app");
+      const rail = app?.querySelector("#mini-guide-renderer");
+      const drawer = app?.querySelector("#guide");
+      const visibleRail = rail && rail.getClientRects().length && getComputedStyle(rail).visibility !== "hidden";
+      app?.classList.toggle("yme-hover-guide", Boolean(visibleRail && !drawer?.hasAttribute("opened") && (pointerInside || focusInside)));
+    }
+    document.addEventListener("pointermove", (event) => {
+      if (event.pointerType === "touch") return;
+      const app = document.querySelector("ytmusic-app");
+      const rail = app?.querySelector("#mini-guide-renderer");
+      if (!rail || !rail.getClientRects().length || getComputedStyle(rail).visibility === "hidden") { pointerInside = false; update(); return; }
+      const rect = rail.getBoundingClientRect();
+      const expanded = app.classList.contains("yme-hover-guide");
+      const width = expanded ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--yme-sidebar-width")) || 240 : rect.width;
+      pointerInside = event.clientX >= rect.left && event.clientX < rect.left + width && event.clientY >= rect.top && event.clientY < rect.bottom;
+      update();
+    }, { passive: true });
+    document.addEventListener("pointerleave", () => { pointerInside = false; update(); });
+    document.addEventListener("focusin", (event) => {
+      focusInside = Boolean(event.target.matches?.(":focus-visible") && event.target.closest?.("#mini-guide-renderer"));
+      update();
+    });
+    document.addEventListener("focusout", () => setTimeout(() => {
+      focusInside = Boolean(document.activeElement?.matches?.(":focus-visible") && document.activeElement?.closest?.("#mini-guide-renderer"));
+      update();
+    }, 0));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") { pointerInside = false; focusInside = false; update(); }
+    });
+    addEventListener("resize", () => { pointerInside = false; focusInside = false; update(); });
   }
 
   function installNavigationHooks() {
@@ -684,12 +843,22 @@
       };
     }
     addEventListener("popstate", scheduleUpdate, { passive: true });
+    addEventListener("resize", scheduleUpdate, { passive: true });
+    addEventListener("yt-navigate-finish", scheduleUpdate, { passive: true });
+    addEventListener("yt-page-data-updated", scheduleUpdate, { passive: true });
+    document.addEventListener("yme-guide-data-ready", scheduleUpdate);
     extensionApi.storage.onChanged.addListener((changes, area) => {
       if (area !== "local") return;
       for (const [key, change] of Object.entries(changes)) {
         if (key in settings) settings[key] = change.newValue ?? defaults[key];
       }
-      if (changes.shuffleOnOpen) lastPlaylistKey = "";
+      if (changes.ymeShuffleEnabled) {
+        shuffleEnabled = changes.ymeShuffleEnabled.newValue !== false;
+        scheduleShuffleSync();
+      }
+      if (changes.quickActions && Array.isArray(settings.quickActions)) settings.quickActions = settings.quickActions.filter((action) => action in actionLabels);
+      if (changes.sidebarShortcuts) settings.sidebarShortcuts = mergeSidebarShortcuts(settings.sidebarShortcuts, settings.sidebarOrderVersion);
+      if (changes.ymeLibraryArtworkCache) libraryCache = changes.ymeLibraryArtworkCache.newValue || {};
       if (changes.rememberVolume) {
         volumeRestored = false;
         if (settings.rememberVolume) extensionApi.storage.local.get("ymeLastVolume").then((stored) => {
@@ -697,7 +866,7 @@
           bindVolumeControls();
         });
       }
-      if (changes.ymeLibraryView) libraryView = changes.ymeLibraryView.newValue === "list" ? "list" : "grid";
+      if (changes.ymeLibraryView) libraryView = ["list", "large-list"].includes(changes.ymeLibraryView.newValue) ? changes.ymeLibraryView.newValue : "grid";
       scheduleUpdate();
     });
 
@@ -708,16 +877,19 @@
   }
 
   Promise.all([
-    extensionApi.storage.local.get(defaults),
-    extensionApi.storage.local.get(["ymeLibraryArtworkCache", "ymeLibraryView", "ymeLastVolume"]),
+    extensionApi.storage.local.get({ ...defaults, sidebarOrderVersion: 0 }),
+    extensionApi.storage.local.get(["ymeLibraryArtworkCache", "ymeLibraryView", "ymeLastVolume", "ymeShuffleEnabled"]),
   ]).then(([stored, persisted]) => {
     settings = { ...defaults, ...stored };
-    if (!Array.isArray(settings.quickActions)) settings.quickActions = [...defaults.quickActions];
-    settings.sidebarShortcuts = mergeSidebarShortcuts(stored.sidebarShortcuts);
+    shuffleEnabled = persisted.ymeShuffleEnabled !== false;
+    settings.quickActions = Array.isArray(settings.quickActions) ? settings.quickActions.filter((action) => action in actionLabels) : [...defaults.quickActions];
+    settings.sidebarShortcuts = mergeSidebarShortcuts(stored.sidebarShortcuts, stored.sidebarOrderVersion);
+    settings.sidebarOrderVersion = 1;
     libraryCache = Object.fromEntries(Object.entries(persisted.ymeLibraryArtworkCache || {}).filter(([, entry]) => entry?.thumbnail && Date.now() - entry.savedAt < 7 * 24 * 60 * 60 * 1000));
-    libraryView = persisted.ymeLibraryView === "list" ? "list" : "grid";
+    libraryView = ["list", "large-list"].includes(persisted.ymeLibraryView) ? persisted.ymeLibraryView : "grid";
     lastVolume = typeof persisted.ymeLastVolume === "number" ? persisted.ymeLastVolume : null;
     installNavigationHooks();
+    installHoverGuide();
     scheduleUpdate();
   });
 })();

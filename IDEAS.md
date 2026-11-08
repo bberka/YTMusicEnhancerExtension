@@ -4,7 +4,29 @@ An idea backlog for a lightweight, fast, customizable companion to YouTube Music
 
 ## Progress snapshot
 
-The initial implementation includes configurable playlist quick actions, editable sidebar shortcuts, SVG navigation icons, shuffle-on-open, color preferences, a larger progress bar, and an experimental side-play dialog. Vite build/test scripts and a help page are also in place. Live-site behavior still needs browser validation.
+### Checked in the real, headless YouTube Music browser
+
+- Playlists opens through YouTube Music's SPA router without a full document reload.
+- Shortcut enable/disable and ordering changes from settings are applied, including moving Playlists before native Home.
+- Native Home visibility, compact top rows, and restoration work.
+- Larger player bar enlarges playback controls, like/dislike, artwork, and the seek track. Disabling it restores native styling.
+- The settings page fits 440, 768, 1440, and 1920 pixel viewports. The browser script also checks both themes.
+- Settings are implemented with React, Tailwind, and official shadcn/ui controls. Browser checks exercise preference persistence and shortcut management through the UI.
+- The mini-guide retains enabled shortcuts. Playlist mirroring has fixture coverage; personal-library verification requires sign-in.
+
+### Implemented, but not fully verified in a signed-in session
+
+- Private playlist artwork/fallback icons and quiet owner-free rows, including current paper-item renderers. DOM regression tests pass; real private-library validation remains open.
+- Playlist quick actions, shuffle automation, remembered volume, and native menu colors.
+- Explore preview caching, bounded to six hours. DOM restoration tests pass; live Explore capture/refresh still needs a dedicated check.
+- The Library list/grid control has DOM regression tests and a headless check using native cards inside a Library shell. A signed-in Library session still needs verification. Side play remains experimental.
+
+### Still missing
+
+- Save-to-playlist picker persistence, playlist/artist/channel dialogs, and moving the player to the top.
+- Full feature parity with either referenced extension. Their features are inspiration, not automatically implemented by attribution.
+
+The custom comments drawer was removed at the user's request. YouTube Music's native comments remain untouched; comment enhancements are no longer part of the active scope.
 
 Still to implement or validate: keep the save-to-playlist picker open, open playlists/artists/channels in dialogs, move the player to the top, and ensure side-play can be isolated without the site blocking its embedded player.
 
@@ -26,9 +48,9 @@ Still to implement or validate: keep the save-to-playlist picker open, open play
 
 ## Player and visual customization
 
-- Make the playback progress bar larger for easier seeking.
+- Enlarge the full player bar, including like/dislike and the seek track.
 - Allow the player to be moved to the top of the page.
-- Let users change the primary/accent colors.
+- The primary/accent color control was removed at the user's request; action/menu color controls remain.
 - Allow colors to be set for context-action menus, including three-dot menus, and customize them consistently across menu types.
 - Keep appearance choices configurable, with good defaults for users who do not change settings.
 
@@ -52,7 +74,7 @@ Still to implement or validate: keep the save-to-playlist picker open, open play
 ## Initial defaults to validate
 
 - Sidebar icons: on.
-- Larger progress bar: on.
+- Larger player bar: on.
 - Quick actions: remove from playlist, add to queue, and play next; users can change the selection and order.
 - Quick-action color: match the player/theme.
 - Shuffle on playlist open: off.

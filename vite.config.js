@@ -18,7 +18,6 @@ export default defineConfig({
       input: {
         options: "options.html",
         help: "help.html",
-        content: "content.js",
         navigation: "navigation.js",
         background: "background.js",
       },

@@ -7,8 +7,20 @@ const sidebar = await readFile(new URL("../sidebar.js", import.meta.url), "utf8"
 const explore = await readFile(new URL("../explore-cache.js", import.meta.url), "utf8");
 const playerSize = await readFile(new URL("../player-size.js", import.meta.url), "utf8");
 const libraryView = await readFile(new URL("../library-view.js", import.meta.url), "utf8");
+const extensionApiModule = await readFile(new URL("../extension-api.js", import.meta.url), "utf8");
+const contentUtils = await readFile(new URL("../content-utils.js", import.meta.url), "utf8");
+const notice = await readFile(new URL("../notice.js", import.meta.url), "utf8");
+const volume = await readFile(new URL("../volume.js", import.meta.url), "utf8");
+const shuffle = await readFile(new URL("../shuffle.js", import.meta.url), "utf8");
+const playlistSearch = await readFile(new URL("../playlist-search.js", import.meta.url), "utf8");
+const libraryArtwork = await readFile(new URL("../library-artwork.js", import.meta.url), "utf8");
+const quickActions = await readFile(new URL("../quick-actions.js", import.meta.url), "utf8");
+const hoverGuide = await readFile(new URL("../hover-guide.js", import.meta.url), "utf8");
+const settingsModule = await readFile(new URL("../src/settings.js", import.meta.url), "utf8");
 const content = await readFile(new URL("../content.js", import.meta.url), "utf8");
-const source = [sidebar, explore, playerSize, libraryView].map((text) => text.replaceAll("export function", "function")).join("\n") + content.replace(/^import .*;\n/gm, "");
+const source = [extensionApiModule, contentUtils, notice, volume, shuffle, playlistSearch, libraryArtwork, quickActions, hoverGuide, settingsModule, sidebar, explore, playerSize, libraryView]
+  .map((text) => text.replace(/^import .*;\n/gm, "").replace(/^export (function|const|let|class) /gm, "$1 "))
+  .join("\n") + content.replace(/^import .*;\n/gm, "");
 
 async function sidebarFixture(stored = {}, { now } = {}) {
   const dom = new JSDOM(`<!doctype html><html lang="en"><head></head><body>
@@ -19,6 +31,7 @@ async function sidebarFixture(stored = {}, { now } = {}) {
     </div><ytmusic-guide-library-entry-renderer></ytmusic-guide-library-entry-renderer></ytmusic-guide-renderer>
     </body></html>`, { url: "https://music.youtube.com/", runScripts: "outside-only" });
   const { window } = dom;
+  if (!window.structuredClone) window.structuredClone = globalThis.structuredClone;
   if (now !== undefined) window.Date.now = () => now;
   const entry = window.document.querySelector("ytmusic-guide-library-entry-renderer");
   entry.attachShadow({ mode: "open" }).innerHTML = `<a id="endpoint" href="/playlist?list=PLfixture">

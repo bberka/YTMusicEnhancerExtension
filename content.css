@@ -105,6 +105,14 @@ ytmusic-responsive-list-item-renderer { position: relative !important; }
 ytmusic-responsive-list-item-renderer:hover .yme-quick-actions,
 ytmusic-responsive-list-item-renderer:focus-within .yme-quick-actions { opacity: 1; pointer-events: auto; }
 
+/* A liked song keeps one filled like button visible without hovering the row. */
+ytmusic-responsive-list-item-renderer.yme-row-liked .yme-quick-actions { opacity: 1; pointer-events: auto; }
+@media (hover: hover) {
+  ytmusic-responsive-list-item-renderer.yme-row-liked:not(:hover):not(:focus-within) .yme-quick-actions .yme-quick-action:not([data-yme-action="like"]) {
+    display: none;
+  }
+}
+
 .yme-quick-action {
   display: grid;
   place-items: center;
@@ -129,6 +137,11 @@ ytmusic-responsive-list-item-renderer:focus-within .yme-quick-actions { opacity:
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.yme-quick-action[data-yme-action="like"].yme-liked svg {
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 .yme-quick-action:hover { background: var(--yt-spec-10-percent-layer, #ffffff1a); color: var(--yme-action, inherit); }

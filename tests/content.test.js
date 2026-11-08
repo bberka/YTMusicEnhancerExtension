@@ -261,6 +261,27 @@ test("custom like activates the native like control and keeps the menu", async (
   } finally { fixture.dom.window.close(); }
 });
 
+test("liked songs keep a filled like action visible and update when the rating changes", async () => {
+  const fixture = await sidebarFixture({ quickActions: ["like", "queue"] });
+  try {
+    fixture.window.history.pushState({}, "", "/playlist?list=PLfixture");
+    const row = fixture.window.document.createElement("ytmusic-responsive-list-item-renderer");
+    row.innerHTML = '<ytmusic-like-button-renderer like-status="LIKE"><button aria-label="Unlike" aria-pressed="true"></button><button aria-label="Dislike"></button></ytmusic-like-button-renderer><ytmusic-menu-renderer></ytmusic-menu-renderer>';
+    fixture.window.document.body.append(row); fixture.flush();
+    const like = row.querySelector('.yme-quick-action[data-yme-action="like"]');
+    assert.equal(row.classList.contains("yme-row-liked"), true);
+    assert.equal(like.classList.contains("yme-liked"), true);
+    assert.equal(like.getAttribute("aria-pressed"), "true");
+    assert.equal(like.title, "Unlike");
+    row.querySelector("ytmusic-like-button-renderer").setAttribute("like-status", "INDIFFERENT");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(row.classList.contains("yme-row-liked"), false);
+    assert.equal(like.classList.contains("yme-liked"), false);
+    assert.equal(like.getAttribute("aria-pressed"), "false");
+    assert.equal(like.title, "Like");
+  } finally { fixture.dom.window.close(); }
+});
+
 test("native ratings disappear for existing action preferences and late-rendered controls", async () => {
   const fixture = await sidebarFixture({ quickActions: ["preview", "remove", "queue", "next"] });
   try {

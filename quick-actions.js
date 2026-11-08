@@ -15,6 +15,65 @@ const actionLabels = {
 
 export function createQuickActions() {
   const patchedRows = new WeakMap();
+  const likeObservers = new WeakMap();
+  const likeRows = new Set();
+  const watchedLikeButtons = new WeakSet();
+
+  function ratingOf(row) {
+    return deepFind(row, "ytmusic-like-button-renderer")[0];
+  }
+
+  function isLiked(row) {
+    const rating = ratingOf(row);
+    if (!rating) return false;
+    const status = (rating.getAttribute("like-status") || "").toUpperCase();
+    if (status) return status === "LIKE";
+    const control = deepFind(rating, "button, [role=button], yt-icon-button").find((element) => {
+      const label = `${element.getAttribute("aria-label") || ""} ${element.getAttribute("title") || ""}`.trim();
+      return /(^|\b)(like|unlike)(\b|$)/i.test(label) && !/dislike/i.test(label);
+    });
+    return control?.getAttribute("aria-pressed") === "true" || /^unlike\b/i.test(`${control?.getAttribute("aria-label") || ""}`.trim());
+  }
+
+  function syncLike(row) {
+    const button = row.querySelector(':scope > .yme-quick-actions .yme-quick-action[data-yme-action="like"]');
+    const liked = Boolean(button) && isLiked(row);
+    row.classList.toggle("yme-row-liked", liked);
+    if (!button) return;
+    button.classList.toggle("yme-liked", liked);
+    button.dataset.liked = String(liked);
+    button.setAttribute("aria-pressed", String(liked));
+    button.title = liked ? "Unlike" : "Like";
+    button.setAttribute("aria-label", `${liked ? "Unlike" : "Like"} this track`);
+  }
+
+  function disconnectLike(row) {
+    likeObservers.get(row)?.observer.disconnect();
+    likeObservers.delete(row);
+    likeRows.delete(row);
+    row.classList.remove("yme-row-liked");
+  }
+
+  function connectLike(row) {
+    const rating = ratingOf(row);
+    if (!rating) return;
+    if (likeObservers.get(row)?.rating !== rating) {
+      likeObservers.get(row)?.observer.disconnect();
+      const observer = new MutationObserver(() => syncLike(row));
+      observer.observe(rating, { attributes: true, subtree: true, attributeFilter: ["like-status", "aria-pressed", "aria-label"] });
+      likeObservers.set(row, { rating, observer });
+    }
+    likeRows.add(row);
+    for (const control of deepFind(rating, "button, [role=button], yt-icon-button")) {
+      if (watchedLikeButtons.has(control)) continue;
+      watchedLikeButtons.add(control);
+      control.addEventListener("click", () => {
+        setTimeout(() => syncLike(row), 0);
+        setTimeout(() => syncLike(row), 350);
+      });
+    }
+    syncLike(row);
+  }
 
   function createQuickAction(action, row) {
     const button = document.createElement("button");
@@ -110,6 +169,7 @@ export function createQuickActions() {
   }
 
   function clear() {
+    for (const row of [...likeRows]) disconnectLike(row);
     for (const bar of document.querySelectorAll(".yme-quick-actions")) bar.remove();
     for (const row of document.querySelectorAll(".yme-has-actions")) {
       row.classList.remove("yme-has-actions", "yme-has-like");
@@ -126,14 +186,20 @@ export function createQuickActions() {
       clear();
       return;
     }
+    for (const row of likeRows) if (!row.isConnected) disconnectLike(row);
+    const hasLike = settings.quickActions.includes("like");
     for (const row of document.querySelectorAll("ytmusic-responsive-list-item-renderer")) {
       if (!row.querySelector("ytmusic-menu-renderer") && !deepFind(row, "ytmusic-menu-renderer").length) continue;
 
       row.classList.add("yme-has-actions");
       row.classList.add("yme-has-like");
+      if (!hasLike) disconnectLike(row);
       let bar = row.querySelector(":scope > .yme-quick-actions");
       const actionKey = settings.quickActions.join(",");
-      if (bar && patchedRows.get(row) === actionKey) continue;
+      if (bar && patchedRows.get(row) === actionKey) {
+        if (hasLike) connectLike(row);
+        continue;
+      }
       if (bar) bar.remove();
       bar = document.createElement("div");
       bar.className = "yme-quick-actions";
@@ -142,6 +208,7 @@ export function createQuickActions() {
         if (actionLabels[action]) bar.append(createQuickAction(action, row));
       }
       row.append(bar);
+      if (hasLike) connectLike(row);
       const positionActions = () => {
         const menu = deepFind(row, "ytmusic-menu-renderer")[0];
         if (!menu) return;

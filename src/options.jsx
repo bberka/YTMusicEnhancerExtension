@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ArrowDown, ArrowUp, Check, Compass, Disc3, Download, Home, Library, ListMusic, Loader2, Mic2, Music2, Plus, Radio, Settings2, Trash2, Users, Palette, PanelLeft, SlidersHorizontal, CircleHelp, Search, X, ThumbsUp, PanelRightOpen, ListPlus, SkipForward, Share2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Compass, Disc3, Download, Home, Library, ListMusic, Loader2, Mic2, Music2, Plus, Radio, Settings2, Trash2, Users, Palette, PanelLeft, SlidersHorizontal, Search, X, ThumbsUp, PanelRightOpen, ListPlus, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,7 +12,7 @@ import "./options.css";
 
 const icons = { home: Home, explore: Compass, library: Library, playlist: ListMusic, download: Download, song: Music2, album: Disc3, artist: Mic2, profile: Users, podcast: Radio };
 const actionIcons = { like: ThumbsUp, preview: PanelRightOpen, remove: Trash2, queue: ListPlus, addPlaylist: ListMusic, radio: Radio, artist: Mic2, album: Disc3, share: Share2 };
-const sectionIcons = { appearance: Palette, playlist: ListMusic, navigation: PanelLeft, player: SlidersHorizontal, help: CircleHelp };
+const sectionIcons = { appearance: Palette, playlist: ListMusic, navigation: PanelLeft, player: SlidersHorizontal };
 const colors = [["match", "Match player"], ["red", "Red"], ["blue", "Blue"], ["green", "Green"], ["purple", "Purple"], ["plain", "Neutral"]];
 
 function searchableText(node) {
@@ -94,6 +94,20 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const api = globalThis.browser ?? globalThis.chrome;
+    if (!api?.storage?.onChanged) return;
+    const onChange = (changes, area) => {
+      if (area !== "local" || !current.current) return;
+      const patch = Object.fromEntries(Object.entries(changes).filter(([key]) => key in defaults).map(([key, change]) => [key, change.newValue]));
+      if (!Object.keys(patch).length) return;
+      current.current = normalizeSettings({ ...current.current, ...patch });
+      setSettings(current.current);
+    };
+    api.storage.onChanged.addListener(onChange);
+    return () => api.storage.onChanged.removeListener(onChange);
+  }, []);
+
+  useEffect(() => {
     if (!settings) return;
     const media = matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
@@ -110,7 +124,7 @@ function App() {
     current.current = value; setSettings(value);
     const version = ++revision.current;
     setStatus("Saving…"); setSaveState("saving");
-    writes.current = writes.current.catch(() => {}).then(() => storage.set(value)).then(() => {
+    writes.current = writes.current.catch(() => {}).then(() => storage.set(patch)).then(() => {
       if (version === revision.current) { setStatus("All changes saved"); setSaveState("saved"); }
     }).catch(() => {
       if (version === revision.current) { setStatus("Could not save. Change a setting to retry."); setSaveState("error"); }
@@ -135,6 +149,7 @@ function App() {
   if (loadError) return <main className="mx-auto max-w-xl p-8" role="alert">{loadError}</main>;
   if (!settings) return <main className="flex min-h-screen items-center justify-center gap-2 text-sm text-muted-foreground" role="status"><Loader2 className="size-4 animate-spin" />Loading settings…</main>;
   const actionOrder = [...settings.quickActions, ...Object.keys(actionNames).filter((id) => !settings.quickActions.includes(id))];
+  const sidebarDensity = settings.compactSidebar ? (settings.compactPlaylistSidebar ? "both" : "navigation") : (settings.compactPlaylistSidebar ? "playlists" : "standard");
 
   const panels = <>
           <Section id="appearance" title="Appearance" description="Choose the appearance of this settings page.">
@@ -150,7 +165,7 @@ function App() {
                 {actionOrder.map((id) => {
                   const index = settings.quickActions.indexOf(id);
                   const Icon = actionIcons[id];
-                  return <div key={id} className="flex items-center gap-3 rounded-md px-2 py-1">
+                  return <div key={id} className="flex min-h-10 items-center gap-3 rounded-md px-2 py-1">
                     <Checkbox id={`action-${id}`} aria-label={`Show ${actionNames[id]}`} checked={index >= 0} onCheckedChange={(enabled) => update({ quickActions: enabled ? [...settings.quickActions, id] : settings.quickActions.filter((value) => value !== id) })} />
                     <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <label htmlFor={`action-${id}`} className="min-w-0 flex-1 text-sm">{actionNames[id]}</label>
@@ -170,10 +185,10 @@ function App() {
                 <output htmlFor="sidebar-width" className="w-12 shrink-0 text-right text-sm tabular-nums">{settings.sidebarWidth}%</output>
               </div>
             </Row>
-            {toggle("compactSidebar", "compact-sidebar", "Compact top navigation", "Use shorter navigation rows and slightly smaller icons.")}
+            {toggle("sidebarResize", "sidebar-resize", "Resize sidebar on YouTube Music", "Drag the sidebar’s right edge to change its width.")}
+            <Row id="sidebar-density" title="Compact sidebar rows" description="Use shorter rows for navigation, playlists, or both."><PreferenceSelect id="sidebar-density" value={sidebarDensity} choices={[["standard", "Off"], ["both", "All rows"], ["navigation", "Navigation only"], ["playlists", "Playlists only"]]} onChange={(value) => update({ compactSidebar: value === "both" || value === "navigation", compactPlaylistSidebar: value === "both" || value === "playlists" })} /></Row>
             {toggle("sidebarIcons", "sidebar-icons", "Playlist icons", "Show artwork or a fallback icon beside playlists in the lower sidebar. Top shortcuts always have icons.")}
             {toggle("compactLibrary", "compact-library", "Quiet playlist sidebar", "Hide owners and Auto playlist subtitles.")}
-            {toggle("compactPlaylistSidebar", "compact-playlist-sidebar", "Compact playlist sidebar", "Use shorter playlist rows and smaller artwork.")}
             {toggle("hideNewPlaylist", "hide-new-playlist", "Hide New playlist button", "Remove the New playlist button from the sidebar.")}
             <div className="py-4">
               <h3 className="text-sm font-medium">Sidebar shortcuts</h3>
@@ -204,9 +219,6 @@ function App() {
             <Row id="player-position" title="Player bar position" description="Choose where playback controls appear."><PreferenceSelect id="player-position" value={settings.playerPosition} choices={[["bottom", "Bottom"], ["top", "Top"]]} onChange={(playerPosition) => update({ playerPosition })} /></Row>
             {toggle("rememberVolume", "remember-volume", "Remember volume", "Restore your last volume when YouTube Music opens.")}
           </Section>
-          <Section id="help" title="Help" description="Find usage guidance and troubleshooting tips.">
-            <p className="py-4 text-sm"><a href="help.html" className="underline underline-offset-4">Open the help guide</a></p>
-          </Section>
   </>;
   const visiblePanels = React.Children.toArray(panels.props.children).filter((panel) =>
     matchesSearch(`${panel.props.title} ${panel.props.description}`, query)
@@ -216,16 +228,19 @@ function App() {
     <header className="border-b bg-card">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
         <a href="#main" className="flex items-center gap-2.5 text-sm font-semibold"><span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Music2 className="size-4" /></span>Music Enhancer</a>
-        <span id="save-status" role="status" aria-live="polite" data-state={saveState} className="flex items-center gap-2 text-xs text-muted-foreground">{saveState === "saving" ? <Loader2 className="size-3.5 animate-spin" /> : saveState === "saved" ? <Check className="size-3.5" /> : null}{status}</span>
+        <nav aria-label="Main navigation" className="flex items-center gap-5 text-sm"><a href="options.html" aria-current="page" className="font-medium">Settings</a><a href="help.html" className="text-muted-foreground hover:text-foreground">Help</a></nav>
       </div>
     </header>
     <main id="main" className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10">
       <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
       <p className="mt-2 mb-5 text-sm text-muted-foreground">Your YouTube Music preferences. Changes save automatically.</p>
-      <div role="search" className="relative mb-8 w-full">
+      {saveState === "error" && <p role="alert" className="mb-4 text-sm text-destructive">{status}</p>}
+      <div className="mb-8 grid gap-7 md:grid-cols-[160px_minmax(0,1fr)] lg:gap-10">
+      <div role="search" className="relative w-full md:col-start-2">
         <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input type="text" role="searchbox" enterKeyHint="search" aria-label="Search settings" placeholder="Search settings…" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") setQuery(""); }} className="pl-9 pr-10" />
         {query && <Button type="button" variant="ghost" size="icon" aria-label="Clear search" className="absolute right-1 top-1/2 size-7 -translate-y-1/2" onClick={() => setQuery("")}><X className="size-4" /></Button>}
+      </div>
       </div>
       <div className="grid items-start gap-7 md:grid-cols-[160px_minmax(0,1fr)] lg:gap-10">
         <nav aria-label="Settings sections" className="sticky top-0 z-10 flex gap-1 overflow-x-auto bg-background py-2 md:top-6 md:flex-col md:py-0">

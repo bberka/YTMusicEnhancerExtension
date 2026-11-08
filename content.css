@@ -1,4 +1,7 @@
 /* Expanded sidebar width; leave the collapsed rail and hidden-guide pages alone. */
+#yme-sidebar-resize { display: none; position: fixed; z-index: 1000; top: var(--ytmusic-nav-bar-height, 64px); bottom: var(--ytmusic-player-bar-height, 72px); left: calc(var(--yme-sidebar-width, 240px) - 4px); width: 8px; cursor: col-resize; touch-action: none; }
+html.yme-resize-sidebar:has(ytmusic-app:not([guide-collapsed]):not([is-hidden-guide-page])) #yme-sidebar-resize { display: block; }
+#yme-sidebar-resize:hover, #yme-sidebar-resize:focus-visible { background: #ffffff55; outline: 2px solid #ff4e55; outline-offset: -2px; }
 ytmusic-guide-renderer:not([is-collapsed]) { width: var(--yme-sidebar-width, 240px) !important; }
 @media (min-width: 936px) {
   ytmusic-app:not([guide-collapsed]):not([is-hidden-guide-page]) { --ytmusic-guide-width: var(--yme-sidebar-width, 240px) !important; }

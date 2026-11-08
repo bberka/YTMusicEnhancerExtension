@@ -138,20 +138,22 @@ try {
     && [...document.querySelectorAll('[data-layout-fixture]:not([data-layout-fixture="0"]) .yme-library-art img')].every((image) => image.naturalWidth > 0));
   const beforeQuiet=await page.locator("[data-layout-fixture]").evaluateAll(rows=>rows.map(row=>({y:row.getBoundingClientRect().y,height:row.getBoundingClientRect().height})));
   await worker.evaluate(() => chrome.storage.local.set({ compactLibrary: true }));
-  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-layout-fixture="1"] .subtitle')).visibility === "hidden");
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-layout-fixture="1"] .subtitle')).display === "none");
   const afterQuiet=await page.locator("[data-layout-fixture]").evaluateAll(rows=>rows.map(row=>({y:row.getBoundingClientRect().y,height:row.getBoundingClientRect().height})));
-  assert.deepEqual(afterQuiet,beforeQuiet,"Quiet mode must preserve the height and position of every playlist row, including intrinsic-height rows");
+  assert.ok(afterQuiet.every(row => row.height >= 40), "Quiet rows must fit their artwork");
   const quietBounds=await page.locator("[data-layout-fixture]").evaluateAll(rows=>rows.map(row=>{
     const art=row.querySelector('.yme-library-art').getBoundingClientRect();
     const rect=row.getBoundingClientRect();
-    return {top:rect.top,bottom:rect.bottom,artTop:art.top,artBottom:art.bottom};
+    const title=row.querySelector(".title").getBoundingClientRect();
+    return {top:rect.top,bottom:rect.bottom,artTop:art.top,artBottom:art.bottom,titleCenter:title.top+title.height/2,rowCenter:rect.top+rect.height/2};
   }));
   assert.ok(quietBounds.every((row,index)=>row.artTop>=row.top && row.artBottom<=row.bottom && (!index || row.artTop>=quietBounds[index-1].artBottom)),"Quiet artwork must stay inside its own row and never overlap neighboring entries");
+  assert.ok(quietBounds.every(row => Math.abs(row.titleCenter - (row.artTop + row.artBottom) / 2) < 2), "Quiet playlist titles must be vertically centered");
   assert.equal(await page.locator("[data-layout-fixture] .yme-library-art").count(), 10);
   assert.equal(await page.locator('[data-layout-fixture="1"] .subtitle').isVisible(), false);
   await page.screenshot({ path: ".dev/evidence/sidebar-wide-quiet-fixture.png" });
   await worker.evaluate(() => chrome.storage.local.set({ compactLibrary: false }));
-  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-layout-fixture="1"] .subtitle')).visibility !== "hidden");
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-layout-fixture="1"] .subtitle')).display !== "none");
   await worker.evaluate(() => chrome.storage.local.set({ compactPlaylistSidebar: true }));
   await page.waitForFunction(() => document.querySelector('[data-layout-fixture="0"] .yme-library-art')?.style.width === "32px");
   const compact = await page.locator("[data-layout-fixture]").evaluateAll(rows => rows.map(row => {
@@ -161,7 +163,7 @@ try {
   }));
   assert.ok(compact.every((row, index) => row.height < beforeQuiet[index].height && row.artTop >= row.top && row.artBottom <= row.bottom && row.titleTop >= row.top && row.subtitleBottom <= row.bottom && row.subtitleTop >= row.titleBottom - 1 && (!index || row.top >= compact[index - 1].bottom - 1)), "Compact rows must fit text and artwork without overlap");
   await worker.evaluate(() => chrome.storage.local.set({ compactLibrary: true }));
-  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-layout-fixture="1"] .subtitle')).visibility === "hidden");
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-layout-fixture="1"] .subtitle')).display === "none");
   assert.equal(await page.locator('[data-layout-fixture="0"]').evaluate(row => row.getBoundingClientRect().height), compact[0].height);
   await worker.evaluate(() => chrome.storage.local.set({ compactPlaylistSidebar: false, compactLibrary: false }));
   await page.waitForFunction(() => document.querySelector('[data-layout-fixture="0"] .yme-library-art')?.style.width === "40px");

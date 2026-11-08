@@ -24,6 +24,7 @@ import { createLibraryView } from "./library-view.js";
     menuColor: "match",
     primaryColor: "red",
     sidebarWidth: 100,
+    sidebarResize: false,
     sidebarIcons: true,
     compactSidebar: false,
     compactLibrary: true,
@@ -88,7 +89,6 @@ import { createLibraryView } from "./library-view.js";
   let volumeWriteTimer = 0;
   const patchedRows = new WeakMap();
   const patchedVolumeControls = new WeakSet();
-  const patchedMedia = new WeakSet();
   const updatePlayerSize = createPlayerSizer(deepFind);
   const updateExplore = installExploreCache({ storage: extensionApi.storage.local, deepFind });
 
@@ -140,7 +140,44 @@ import { createLibraryView } from "./library-view.js";
     root.classList.toggle("yme-large-progress", settings.largeProgress);
     root.classList.toggle("yme-sidebar-icons", settings.sidebarIcons);
     root.classList.toggle("yme-compact-sidebar", settings.compactSidebar);
+    root.classList.toggle("yme-resize-sidebar", settings.sidebarResize);
+    document.getElementById("yme-sidebar-resize")?.setAttribute("aria-valuenow", String(width));
     root.style.setProperty("--yme-menu-accent", colorValue(settings.menuColor, colorValue(settings.primaryColor, "#ff4e55")));
+  }
+
+  function installSidebarResize() {
+    const handle = document.createElement("div");
+    handle.id = "yme-sidebar-resize";
+    handle.setAttribute("role", "separator");
+    handle.setAttribute("aria-label", "Resize sidebar");
+    handle.setAttribute("aria-orientation", "vertical");
+    handle.tabIndex = 0;
+    document.documentElement.append(handle);
+    function setWidth(width, save) {
+      const percent = Math.max(75, Math.min(150, Math.round(width / 2.4 / 5) * 5));
+      settings.sidebarWidth = percent;
+      setPageSettings();
+      handle.setAttribute("aria-valuenow", String(percent));
+      if (save) extensionApi.storage.local.set({ sidebarWidth: percent });
+    }
+    handle.setAttribute("aria-valuemin", "75");
+    handle.setAttribute("aria-valuemax", "150");
+    handle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      handle.setPointerCapture(event.pointerId);
+    });
+    handle.addEventListener("pointermove", (event) => {
+      if (handle.hasPointerCapture(event.pointerId)) setWidth(event.clientX, false);
+    });
+    handle.addEventListener("pointerup", (event) => {
+      if (handle.hasPointerCapture(event.pointerId)) { setWidth(event.clientX, true); handle.releasePointerCapture(event.pointerId); }
+    });
+    handle.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      setWidth((settings.sidebarWidth + (event.key === "ArrowRight" ? 5 : -5)) * 2.4, true);
+    });
   }
 
   function colorValue(name, fallback) {
@@ -268,7 +305,7 @@ import { createLibraryView } from "./library-view.js";
   }
 
   function playerRoots() {
-    return document.querySelectorAll("ytmusic-player-bar, ytmusic-miniplayer, ytmusic-player-page");
+    return document.querySelectorAll("ytmusic-player-bar, ytmusic-miniplayer, ytmusic-player-page, ytmusic-player");
   }
 
   function volumeControls() {
@@ -283,7 +320,7 @@ import { createLibraryView } from "./library-view.js";
   }
 
   function fractionFromControl(control) {
-    const value = Number(control.value);
+    const value = Number(control.getAttribute("aria-valuenow") ?? control.value);
     if (!Number.isFinite(value)) return null;
     const min = Number(control.min || 0);
     const max = Number(control.max || 100);
@@ -302,16 +339,12 @@ import { createLibraryView } from "./library-view.js";
     const controls = volumeControls();
     const media = [];
     for (const root of playerRoots()) media.push(...deepFind(root, "audio, video"));
-    if (!controls.length && !media.length) return;
-    for (const control of controls) {
-      const min = Number(control.min || 0);
-      const max = Number(control.max || 100);
-      control.value = String(min + lastVolume * (max - min));
-      control.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
-      control.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
-    }
-    for (const element of media) element.volume = lastVolume;
-    volumeRestored = true;
+    if (!controls.length || !media.length) return;
+    document.documentElement.dataset.ymeRestoreVolume = String(lastVolume * 100);
+    const event = new Event("yme-restore-volume", { cancelable: true });
+    document.dispatchEvent(event);
+    delete document.documentElement.dataset.ymeRestoreVolume;
+    volumeRestored = event.defaultPrevented;
   }
 
   function bindVolumeControls() {
@@ -324,13 +357,6 @@ import { createLibraryView } from "./library-view.js";
       };
       control.addEventListener("input", remember, { passive: true });
       control.addEventListener("change", remember, { passive: true });
-    }
-    for (const root of playerRoots()) {
-      for (const media of deepFind(root, "audio, video")) {
-        if (patchedMedia.has(media)) continue;
-        patchedMedia.add(media);
-        media.addEventListener("volumechange", () => saveVolume(media.volume), { passive: true });
-      }
     }
     restoreVolume();
   }
@@ -789,6 +815,7 @@ import { createLibraryView } from "./library-view.js";
     if (record.target.closest?.("ytmusic-player-bar, ytmusic-miniplayer")) return true;
     for (const node of record.addedNodes) {
       if (node.nodeType !== Node.ELEMENT_NODE) continue;
+      if (node.matches?.("ytmusic-player, video, audio") || node.querySelector?.("ytmusic-player, video, audio")) return true;
       if (node.matches?.('input[placeholder="Find on this page" i], input[aria-label="Find on this page" i]') || node.querySelector?.('input[placeholder="Find on this page" i], input[aria-label="Find on this page" i]')) return true;
       if (node.matches?.("ytmusic-responsive-list-item-renderer, ytmusic-guide-entry-renderer, ytmusic-guide-library-entry-renderer, ytmusic-player-bar, ytmusic-menu-popup-renderer, tp-yt-paper-slider, ytmusic-two-row-item-renderer, ytmusic-browse-response, ytmusic-grid-renderer, ytmusic-sort-filter-button-renderer, ytmusic-playlist-shelf-renderer, ytmusic-side-aligned-item-renderer")) return true;
       if (node.querySelector?.("ytmusic-responsive-list-item-renderer, ytmusic-guide-entry-renderer, ytmusic-guide-library-entry-renderer, ytmusic-player-bar, ytmusic-menu-popup-renderer, tp-yt-paper-slider, ytmusic-two-row-item-renderer, ytmusic-browse-response, ytmusic-grid-renderer, ytmusic-sort-filter-button-renderer, ytmusic-playlist-shelf-renderer, ytmusic-side-aligned-item-renderer")) return true;
@@ -889,6 +916,7 @@ import { createLibraryView } from "./library-view.js";
     libraryView = ["list", "large-list"].includes(persisted.ymeLibraryView) ? persisted.ymeLibraryView : "grid";
     lastVolume = typeof persisted.ymeLastVolume === "number" ? persisted.ymeLastVolume : null;
     installNavigationHooks();
+    installSidebarResize();
     installHoverGuide();
     scheduleUpdate();
   });

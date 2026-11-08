@@ -19,7 +19,7 @@ export const defaults = {
   theme: "system",
   quickActions: ["like", "queue"], quickActionsEnabled: true,
   actionColor: "match", menuColor: "match", primaryColor: "red",
-  sidebarWidth: 100, sidebarIcons: true, compactSidebar: false, compactLibrary: true, compactPlaylistSidebar: false, hideNewPlaylist: true,
+  sidebarWidth: 100, sidebarResize: false, sidebarIcons: true, compactSidebar: false, compactLibrary: true, compactPlaylistSidebar: false, hideNewPlaylist: true,
   sidebarShortcuts: shortcuts, sidebarOrderVersion: 1,
   largeProgress: true, playerPosition: "bottom", rememberVolume: false,
 };
@@ -65,6 +65,6 @@ export const storage = {
   async set(values) {
     const api = globalThis.browser ?? globalThis.chrome;
     if (api?.storage?.local) return api.storage.local.set(values);
-    localStorage.setItem("music-enhancer-settings", JSON.stringify(values));
+    localStorage.setItem("music-enhancer-settings", JSON.stringify({ ...await storage.get(), ...values }));
   },
 };

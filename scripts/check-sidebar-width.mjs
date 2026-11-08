@@ -21,6 +21,20 @@ try {
   const app = page.locator("ytmusic-app");
   if (await app.evaluate(node => node.hasAttribute("guide-collapsed"))) await page.locator("ytmusic-nav-bar #guide-button button").click();
   await page.locator("#guide-renderer").waitFor({ state: "visible", timeout: 45000 });
+  const resizeToggle = options.locator("#sidebar-resize");
+  if (await resizeToggle.getAttribute("aria-checked") !== "true") await resizeToggle.click();
+  const handle = page.locator("#yme-sidebar-resize");
+  await handle.waitFor({ state: "visible" });
+  const handleBox = await handle.boundingBox();
+  await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 30);
+  await page.mouse.down();
+  await page.mouse.move(300, handleBox.y + 30, { steps: 5 });
+  await page.mouse.up();
+  await options.waitForFunction(async () => (await chrome.storage.local.get("sidebarWidth")).sidebarWidth === 125);
+  await options.waitForFunction(() => document.querySelector("#sidebar-width").value === "125");
+  await handle.focus();
+  await page.keyboard.press("ArrowLeft");
+  await options.waitForFunction(async () => (await chrome.storage.local.get("sidebarWidth")).sidebarWidth === 120);
   const measure = () => page.evaluate(() => ({
     guide: document.querySelector("#guide-renderer").getBoundingClientRect().width,
     layout: parseFloat(getComputedStyle(document.querySelector("ytmusic-app")).getPropertyValue("--ytmusic-guide-width")),

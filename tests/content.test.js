@@ -161,14 +161,13 @@ test("quiet playlist mode hides owner text and restores it when disabled", async
   const fixture = await sidebarFixture({ compactLibrary: true });
   try {
     const root = fixture.entry.shadowRoot;
-    assert.equal(root.querySelector(".subtitle").style.visibility, "hidden");
-    assert.equal(root.querySelector(".subtitle").style.display, "");
+    assert.equal(root.querySelector(".subtitle").style.display, "none");
     assert.equal(fixture.entry.style.height, "");
     assert.equal(root.querySelector("a").style.height, "");
     assert.equal(root.querySelector("a").style.minHeight, "48px");
     fixture.listeners[0]({ compactLibrary: { newValue: false } }, "local");
     fixture.flush();
-    assert.equal(root.querySelector(".subtitle").style.visibility, "");
+    assert.equal(root.querySelector(".subtitle").style.display, "");
   } finally { fixture.dom.window.close(); }
 });
 
@@ -180,14 +179,14 @@ test("compact playlist rows are independent of quiet mode and restore original s
     fixture.listeners[0]({ compactPlaylistSidebar: { newValue: true } }, "local"); fixture.flush();
     assert.equal(link.style.height, "44px");
     assert.equal(root.querySelector(".yme-library-art").style.width, "32px");
-    assert.equal(root.querySelector(".subtitle").style.visibility, "");
+    assert.equal(root.querySelector(".subtitle").style.display, "");
     fixture.listeners[0]({ compactLibrary: { newValue: true } }, "local"); fixture.flush();
     assert.equal(link.style.height, "44px");
-    assert.equal(root.querySelector(".subtitle").style.visibility, "hidden");
+    assert.equal(root.querySelector(".subtitle").style.display, "none");
     fixture.listeners[0]({ compactPlaylistSidebar: { newValue: false } }, "local"); fixture.flush();
     assert.equal(link.style.height, "");
     assert.equal(root.querySelector(".yme-library-art").style.width, "40px");
-    assert.equal(root.querySelector(".subtitle").style.visibility, "hidden");
+    assert.equal(root.querySelector(".subtitle").style.display, "none");
   } finally { fixture.dom.window.close(); }
 });
 
@@ -371,7 +370,7 @@ test("current paper-item playlist rows receive icons and lose owner subtitles", 
     await new Promise((resolve) => setImmediate(resolve));
     fixture.flush();
     assert.ok(row.querySelector(".yme-library-art svg"));
-    assert.equal(row.querySelector(".subtitle").style.visibility, "hidden");
+    assert.equal(row.querySelector(".subtitle").style.display, "none");
     assert.equal(row.querySelector("tp-yt-paper-item").style.height, "");
   } finally { fixture.dom.window.close(); }
 });
@@ -502,14 +501,14 @@ test("playlist icon preference never removes top shortcut icons",async()=>{
     const shortcut=fixture.window.document.querySelector(".yme-sidebar-shortcut");
     assert.ok(shortcut.querySelector("svg"));
     assert.equal(fixture.entry.shadowRoot.querySelector(".yme-library-art"),null);
-    assert.notEqual(fixture.entry.shadowRoot.querySelector(".subtitle").style.visibility,"hidden");
+    assert.notEqual(fixture.entry.shadowRoot.querySelector(".subtitle").style.display,"none");
     fixture.listeners[0]({sidebarIcons:{newValue:true}},"local");fixture.flush();
     assert.equal(fixture.window.document.querySelector(".yme-sidebar-shortcut"),shortcut);
     assert.ok(fixture.entry.shadowRoot.querySelector(".yme-library-art svg"));
-    assert.notEqual(fixture.entry.shadowRoot.querySelector(".subtitle").style.visibility,"hidden");
+    assert.notEqual(fixture.entry.shadowRoot.querySelector(".subtitle").style.display,"none");
     fixture.listeners[0]({compactLibrary:{newValue:true}},"local");fixture.flush();
     assert.ok(fixture.entry.shadowRoot.querySelector(".yme-library-art svg"));
-    assert.equal(fixture.entry.shadowRoot.querySelector(".subtitle").style.visibility,"hidden");
+    assert.equal(fixture.entry.shadowRoot.querySelector(".subtitle").style.display,"none");
   } finally {fixture.dom.window.close();}
 });
 
@@ -549,7 +548,7 @@ test("hidden native playlist glyphs cannot suppress wide artwork or fallbacks",a
     row.dataset.ymeThumbnail="https://i.ytimg.com/vi/fixture/default.jpg";
     fixture.window.document.dispatchEvent(new fixture.window.Event("yme-guide-data-ready"));fixture.flush();
     assert.equal(row.shadowRoot.querySelector(".yme-library-art img").src,row.dataset.ymeThumbnail);
-    assert.notEqual(row.shadowRoot.querySelector(".subtitle").style.visibility,"hidden");
+    assert.notEqual(row.shadowRoot.querySelector(".subtitle").style.display,"none");
     fixture.listeners[0]({sidebarIcons:{newValue:false}},"local");fixture.flush();
     assert.equal(row.shadowRoot.querySelector(".yme-library-art"),null);
     assert.equal(native.style.display,"none");

@@ -1,5 +1,14 @@
 // Runs in YouTube Music's page world so shortcuts can use its SPA router.
 (() => {
+  document.addEventListener("yme-restore-volume", (event) => {
+    const volume = Number(document.documentElement.dataset.ymeRestoreVolume);
+    const player = document.querySelector("ytmusic-player")?.getPlayer?.();
+    if (!Number.isFinite(volume) || typeof player?.setVolume !== "function") return;
+    player.setVolume(Math.max(0, Math.min(100, volume)));
+    const slider = document.querySelector("ytmusic-player-bar #volume-slider");
+    if (slider) slider.value = Math.max(0, Math.min(100, volume));
+    event.preventDefault();
+  });
   const browseIds = {
     "/": "FEmusic_home",
     "/explore": "FEmusic_explore",

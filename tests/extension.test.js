@@ -41,7 +41,7 @@ test("settings include the requested editable playlist and sidebar defaults", as
   assert.match(source, /id: "home", label: "Home"/);
   assert.match(source, /id: "explore", label: "Explore"/);
   assert.match(source, /compactSidebar: false/);
-  assert.match(optionsHtml, /"compact-sidebar"/);
+  assert.match(optionsHtml, /"sidebar-density"/);
   assert.match(source, /label: "Playlists"/);
   assert.match(source, /"downloads", "Downloads"/);
 });

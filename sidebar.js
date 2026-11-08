@@ -54,8 +54,7 @@ export function createSidebarEnhancer({ deepFind, makeIcon, scheduleUpdate, thum
       style(target, "box-sizing", settings.compactPlaylistSidebar ? "border-box" : null);
     }
     style(link, "padding-block", settings.compactPlaylistSidebar ? "0px" : null);
-    // Preserve subtitle space: removing it from flow collapses content-sized rows beneath the artwork.
-    for (const node of subtitleNodes) style(node, "visibility", settings.compactLibrary ? "hidden" : null);
+    for (const node of subtitleNodes) style(node, "display", settings.compactLibrary ? "none" : null);
 
     const id = playlistId(entry);
     const live = thumbnail(entry);

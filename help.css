@@ -7,6 +7,7 @@ a:focus-visible { outline: 2px solid #ef4057; outline-offset: 4px; }
 .topbar { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 12px max(20px, calc((100vw - 960px) / 2)); border-bottom: 1px solid #333338; }
 .brand { font-weight: 600; }
 .help-link { color: #a1a1aa; }
+.topbar nav { display: flex; gap: 20px; }
 main { max-width: 800px; margin: auto; padding: 32px 20px 64px; }
 h1 { margin: 0; font-size: 32px; letter-spacing: -.04em; }
 h2 { margin: 0 0 10px; font-size: 18px; }

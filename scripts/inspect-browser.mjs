@@ -122,7 +122,7 @@ try {
         const mirror=document.querySelector('#yme-rail-playlists button');
         const subtitle=source?.querySelector('.subtitle');
         return Boolean(mirror?.querySelector('svg, img'))===sidebarIcons
-          && subtitle && getComputedStyle(subtitle).visibility===(compactLibrary?'hidden':'visible');
+          && subtitle && (getComputedStyle(subtitle).display === 'none') === compactLibrary;
       },{sidebarIcons,compactLibrary});
       for (const guide of ['#guide-renderer','#mini-guide-renderer']) {
         assert.equal(await page.locator(`${guide} .yme-sidebar-shortcut`).evaluateAll(nodes=>nodes.length>0 && nodes.every(node=>node.querySelector('svg'))),true);
@@ -185,7 +185,6 @@ try {
   checks.settingsSwitches = [];
   for (const [id,key] of [
     ["quick-actions-enabled","quickActionsEnabled"],
-    ["compact-sidebar","compactSidebar"],
     ["sidebar-icons","sidebarIcons"],["compact-library","compactLibrary"],
     ["large-progress","largeProgress"],["remember-volume","rememberVolume"],
   ]) {
@@ -249,7 +248,7 @@ try {
   await options.getByRole("alertdialog").getByRole("button",{name:"Reset settings",exact:true}).click();
   await options.waitForFunction(async()=>{
     const value=await chrome.storage.local.get(["theme","quickActions","rememberVolume"]);
-    return value.theme==="system" && value.quickActions[0]==="preview" && value.rememberVolume===false;
+    return value.theme==="system" && value.quickActions[0]==="like" && value.rememberVolume===false;
   });
   checks.resetConfirmation = true;
   await options.locator("#remember-volume").focus();

@@ -18,21 +18,45 @@ try {
   await search.waitFor();
   for (const width of [1280, 440]) {
     await page.setViewportSize({ width, height: 900 });
-    await search.fill("example");
+    await search.fill("theme");
     const geometry = await search.evaluate(input => {
       const field = input.getBoundingClientRect();
-      const main = document.querySelector("main").getBoundingClientRect();
-      const style = getComputedStyle(document.querySelector("main"));
+      const card = document.querySelector("section").getBoundingClientRect();
       const clear = document.querySelector('[aria-label="Clear search"]').getBoundingClientRect();
-      return { field: { left: field.left, right: field.right, top: field.top, bottom: field.bottom }, main: { left: main.left, right: main.right }, paddingLeft: parseFloat(style.paddingLeft), paddingRight: parseFloat(style.paddingRight), clear: { left: clear.left, right: clear.right, top: clear.top, bottom: clear.bottom }, inputType: input.type };
+      return { field: { left: field.left, right: field.right, top: field.top, bottom: field.bottom }, card: { left: card.left, right: card.right }, clear: { left: clear.left, right: clear.right, top: clear.top, bottom: clear.bottom }, inputType: input.type };
     });
-    assert.ok(Math.abs(geometry.field.left - geometry.main.left - geometry.paddingLeft) < 1 && Math.abs(geometry.main.right - geometry.paddingRight - geometry.field.right) < 1, `Search should span the content width: ${JSON.stringify(geometry)}`);
+    assert.ok(Math.abs(geometry.field.left - geometry.card.left) < 1 && Math.abs(geometry.field.right - geometry.card.right) < 1, `Search should align with the settings cards: ${JSON.stringify(geometry)}`);
     assert.ok(geometry.clear.left >= geometry.field.left && geometry.clear.right <= geometry.field.right && geometry.clear.top >= geometry.field.top && geometry.clear.bottom <= geometry.field.bottom, "Clear button should stay inside the search field");
     assert.equal(geometry.inputType, "text", "A text input avoids the browser’s duplicate search clear control");
     assert.equal(await page.getByRole("button", { name: "Clear search" }).count(), 1);
   }
   await page.setViewportSize({ width: 1280, height: 900 });
   await search.fill("");
+
+  const action = page.locator("#action-preview");
+  const row = action.locator("..");
+  const rowHeight = (await row.boundingBox()).height;
+  await action.click();
+  assert.equal((await row.boundingBox()).height, rowHeight, "Action rows should not change height when enabled");
+  await action.click();
+  assert.equal(await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Help" }).count(), 1);
+  assert.equal(await page.locator("#help-title").count(), 0);
+
+  // Each combination must survive reload and keep the two existing preferences intact.
+  for (const [label, compactSidebar, compactPlaylistSidebar] of [
+    ["All rows", true, true], ["Navigation only", true, false],
+    ["Playlists only", false, true], ["Off", false, false],
+  ]) {
+    await page.locator("#sidebar-density").click();
+    await page.getByRole("option", { name: label, exact: true }).click();
+    await page.waitForFunction(async (expected) => {
+      const saved = await chrome.storage.local.get(["compactSidebar", "compactPlaylistSidebar"]);
+      return saved.compactSidebar === expected[0] && saved.compactPlaylistSidebar === expected[1];
+    }, [compactSidebar, compactPlaylistSidebar]);
+    await page.reload();
+    await page.locator("#sidebar-density").waitFor();
+    assert.equal(await page.locator("#sidebar-density").textContent(), label);
+  }
 
   const checkboxBox = await page.getByRole("checkbox").first().boundingBox();
   assert.equal(checkboxBox.width, 20);
@@ -44,7 +68,7 @@ try {
   assert.equal(await page.getByText("Comfortable", { exact: true }).count(), 0);
   assert.equal(await page.getByText("Reduce motion", { exact: true }).count(), 0);
   const links = page.getByRole("navigation", { name: "Settings sections" }).getByRole("link");
-  const names = ["Appearance", "Playlists", "Navigation", "Player", "Help"];
+  const names = ["Appearance", "Playlists", "Navigation", "Player"];
   assert.deepEqual(await links.allTextContents(), names);
   assert.equal(await links.evaluateAll((nodes) => nodes.every((node) => node.querySelector('svg[aria-hidden="true"]'))), true);
   for (const [query, section, control] of [
@@ -52,7 +76,6 @@ try {
     ["theme", "Appearance", "#theme-trigger"],
     ["Queue", "Playlists", "#action-queue"],
     ["Downloads", "Navigation", "#shortcut-downloads"],
-    ["troubleshooting", "Help", "#help-title"],
   ]) {
     await search.fill(query);
     await page.locator(control).waitFor({ state: "visible" });

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { defaults, actionNames, normalizeSettings, storage, validPath } from "./settings";
+import { cn } from "@/lib/utils";
 import "./options.css";
 
 const icons = { home: Home, explore: Compass, library: Library, playlist: ListMusic, download: Download, song: Music2, album: Disc3, artist: Mic2, profile: Users, podcast: Radio };
@@ -39,7 +40,7 @@ function Section({ id, title, description, children, query = "" }) {
 }
 
 function Row({ id, title, description, children, stacked = false }) {
-  return <div className={`setting-row flex gap-5 py-4 ${stacked ? "flex-col" : "items-center justify-between"}`}>
+  return <div className={cn("setting-row flex gap-5 py-4", stacked ? "flex-col" : "items-center justify-between")}>
     <div className="min-w-0">
       <label htmlFor={id} className="text-sm font-medium">{title}</label>
       {description && <p className="mt-1 max-w-prose text-xs leading-relaxed text-muted-foreground">{description}</p>}
@@ -75,8 +76,7 @@ function App() {
   const current = useRef(null);
   const writes = useRef(Promise.resolve());
   const revision = useRef(0);
-  const [status, setStatus] = useState("Loading settings…");
-  const [saveState, setSaveState] = useState("loading");
+  const [saveError, setSaveError] = useState(false);
   const [formError, setFormError] = useState("");
   const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
@@ -88,7 +88,6 @@ function App() {
       const value = normalizeSettings(stored);
       current.current = value;
       setSettings(value);
-      setStatus("All changes saved"); setSaveState("saved");
     }).catch(() => { if (active) setLoadError("Could not load settings. Reload this page to try again."); });
     return () => { active = false; };
   }, []);
@@ -123,11 +122,9 @@ function App() {
     const value = { ...current.current, ...patch };
     current.current = value; setSettings(value);
     const version = ++revision.current;
-    setStatus("Saving…"); setSaveState("saving");
-    writes.current = writes.current.catch(() => {}).then(() => storage.set(patch)).then(() => {
-      if (version === revision.current) { setStatus("All changes saved"); setSaveState("saved"); }
-    }).catch(() => {
-      if (version === revision.current) { setStatus("Could not save. Change a setting to retry."); setSaveState("error"); }
+    setSaveError(false);
+    writes.current = writes.current.catch(() => {}).then(() => storage.set(patch)).catch(() => {
+      if (version === revision.current) setSaveError(true);
     });
   }
 
@@ -238,7 +235,7 @@ function App() {
     <main id="main" className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10">
       <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
       <p className="mt-2 mb-5 text-sm text-muted-foreground">Your YouTube Music preferences. Changes save automatically.</p>
-      {saveState === "error" && <p role="alert" className="mb-4 text-sm text-destructive">{status}</p>}
+      {saveError && <p role="alert" className="mb-4 text-sm text-destructive">Could not save. Change a setting to retry.</p>}
       <div className="mb-8 grid gap-7 md:grid-cols-[160px_minmax(0,1fr)] lg:gap-10">
       <div role="search" className="relative w-full md:col-start-2">
         <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

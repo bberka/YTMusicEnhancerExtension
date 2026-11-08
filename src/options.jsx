@@ -229,7 +229,7 @@ function App() {
     <header className="border-b bg-card">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
         <a href="#main" className="flex items-center gap-2.5 text-sm font-semibold"><span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Music2 className="size-4" /></span>Music Enhancer</a>
-        <nav aria-label="Main navigation" className="flex items-center gap-5 text-sm"><a href="options.html" aria-current="page" className="font-medium">Settings</a><a href="help.html" className="text-muted-foreground hover:text-foreground">Help</a></nav>
+        <nav aria-label="Main navigation" className="flex items-center gap-5 text-sm"><a href="options.html" aria-current="page" className="py-1 font-medium">Settings</a><a href="help.html" className="py-1 text-muted-foreground hover:text-foreground">Help</a></nav>
       </div>
     </header>
     <main id="main" className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10">

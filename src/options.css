@@ -17,7 +17,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--muted);
   --color-accent-foreground: var(--foreground);
-  --color-destructive: #dc2626;
+  --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--border);
   --color-ring: var(--primary);
@@ -37,6 +37,7 @@
   --muted-foreground: #66666e;
   --primary: #d91535;
   --primary-foreground: #ffffff;
+  --destructive: #dc2626;
   --border: #dedee3;
   --radius: 8px;
 }
@@ -47,7 +48,8 @@
   --card: #18181b;
   --muted: #27272a;
   --muted-foreground: #a1a1aa;
-  --primary: #ef4057;
+  --primary: #dc2f4c;
+  --destructive: #ef4444;
   --border: #333338;
 }
 @layer base {

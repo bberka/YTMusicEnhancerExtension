@@ -24,7 +24,7 @@ An idea backlog for a lightweight, fast, customizable companion to YouTube Music
 ### Still missing
 
 - Save-to-playlist picker persistence, playlist/artist/channel dialogs, and moving the player to the top.
-- Full feature parity with either referenced extension. Their features are inspiration, not automatically implemented by attribution.
+- Full feature parity with the referenced extension. Its features are inspiration, not automatically implemented by attribution.
 
 The custom comments drawer was removed at the user's request. YouTube Music's native comments remain untouched; comment enhancements are no longer part of the active scope.
 

@@ -1,4 +1,4 @@
-# Music Enhancer — product ideas
+# Music Enhancer: product ideas
 
 An idea backlog for a lightweight, fast, customizable companion to YouTube Music. The extension should use a settings page rather than a toolbar popup. The goal is to make common listening and playlist tasks easier while keeping sensible defaults for people who do not want to configure everything.
 

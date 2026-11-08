@@ -33,7 +33,7 @@ Fresh installs hide the New playlist sidebar button and enable Like and Add to q
 
 ## Sidebar and caching
 
-- **Quiet playlist sidebar** is on by default: hides owner and “Auto playlist” subtitles while keeping the original row height. Turn it off to show subtitles again.
+- **Quiet playlist sidebar** is on by default: hides owner and "Auto playlist" subtitles while keeping the original row height. Turn it off to show subtitles again.
 - **Compact playlist sidebar** shortens playlist rows and uses smaller artwork independently of quiet mode.
 - **Playlist icons** controls only the lower playlist list and its narrow-rail mirrors. It shows artwork when available or a leading playlist glyph otherwise. It is independent of quiet mode. Top navigation and added shortcuts always keep their icons, even when playlist icons are off.
 - **Compact top navigation** uses shorter navigation rows and 20 px icons for native destinations and added shortcuts, including the narrow rail. Turning it off restores native icon sizes and 24 px shortcut icons; native icon designs are preserved.

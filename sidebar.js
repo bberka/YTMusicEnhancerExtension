@@ -265,6 +265,14 @@ export function createSidebarEnhancer({ deepFind, makeIcon, scheduleUpdate, thum
           style(container, "padding-block-start", settings.hideNewPlaylist ? "0px" : null);
           style(container, "margin-block-start", settings.hideNewPlaylist ? "0px" : null);
         }
+        for (const buttons of deepFind(section, "#buttons")) {
+          style(buttons, "margin-block-start", settings.hideNewPlaylist ? "0px" : null);
+          style(buttons, "margin-block-end", settings.hideNewPlaylist ? "0px" : null);
+        }
+        for (const title of deepFind(section, "h3")) {
+          const empty = title.hasAttribute("hidden") || deepFind(title, "[is-empty]").length;
+          style(title, "display", settings.hideNewPlaylist && empty ? "none" : null);
+        }
       }
     }
     if (collapsed) {

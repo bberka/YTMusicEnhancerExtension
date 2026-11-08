@@ -901,18 +901,24 @@ test("hiding New playlist removes the playlist section's top inset and restores 
     const host = document.querySelector("ytmusic-guide-renderer");
     const section = document.createElement("ytmusic-guide-section-renderer");
     section.style.paddingBlockStart = "16px";
-    section.innerHTML = '<div id="items" style="padding-block-start: 12px; margin-block-start: 6px"><ytmusic-guide-library-entry-renderer><a href="/playlist?list=PLone">Playlist</a></ytmusic-guide-library-entry-renderer></div>';
+    section.innerHTML = '<div id="buttons" style="margin-block-end: 16px"></div><h3 hidden><yt-formatted-string id="guide-section-title" is-empty></yt-formatted-string></h3><div id="items" style="padding-block-start: 12px; margin-block-start: 6px"><ytmusic-guide-library-entry-renderer><a href="/playlist?list=PLone">Playlist</a></ytmusic-guide-library-entry-renderer></div>';
     host.append(section);
     await new Promise((resolve) => setImmediate(resolve)); fixture.flush();
     const items = section.querySelector("#items");
+    const buttons = section.querySelector("#buttons");
+    const title = section.querySelector("h3");
     fixture.listeners[0]({ hideNewPlaylist: { newValue: true } }, "local"); fixture.flush();
     assert.equal(section.style.paddingBlockStart, "0px");
     assert.equal(items.style.paddingBlockStart, "0px");
     assert.equal(items.style.marginBlockStart, "0px");
+    assert.equal(buttons.style.marginBlockEnd, "0px");
+    assert.equal(title.style.display, "none");
     fixture.listeners[0]({ hideNewPlaylist: { newValue: false } }, "local"); fixture.flush();
     assert.equal(section.style.paddingBlockStart, "16px");
     assert.equal(items.style.paddingBlockStart, "12px");
     assert.equal(items.style.marginBlockStart, "6px");
+    assert.equal(buttons.style.marginBlockEnd, "16px");
+    assert.equal(title.style.display, "");
   } finally { fixture.dom.window.close(); }
 });
 
